@@ -1,0 +1,38 @@
+<idea-plugin>
+  <id>com.your.company.unique.plugin.id</id>
+  <name>Mybatis-Generator</name>
+  <version>1.0</version>
+  <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">Beyond</vendor>
+
+  <description>
+    description
+  </description>
+
+  <change-notes>
+    change notes
+  </change-notes>
+
+  <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+  <idea-version since-build="173.0"/>
+
+  <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <depends>com.intellij.modules.platform</depends>
+
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Add your extensions here -->
+  </extensions>
+
+
+  <actions>
+    <group id="CustomGroup" text="GenerateMybatis">
+      <add-to-group group-id="MainMenu" anchor="last"/>
+    </group>
+    <!-- Add your actions here -->
+    <action id="generateMyBatisAction" class="com.beyond.generator.GenerateAction" text="Generate Mybatis File">
+      <add-to-group group-id="CustomGroup" anchor="first"/>
+    </action>
+  </actions>
+
+</idea-plugin>
