@@ -7,6 +7,7 @@ import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -17,6 +18,9 @@ import java.util.Map;
  * @date 2021/02/22
  */
 public class GenerateForm extends DialogWrapper {
+
+
+    private static final String GLOBAL_SENSITIVE_KEY = "mybatis-generate-plugin-jdbc-sk";
 
     private Form form = new Form();
 
@@ -40,15 +44,14 @@ public class GenerateForm extends DialogWrapper {
 
     @Override
     protected @Nullable JComponent createCenterPanel() {
-        PropertiesComponent properties = PropertiesComponent.getInstance(project);
-        return form.addItem(new InputItem("jdbcUrl", "jdbcUrl: ", properties.getValue("jdbcUrl")))
-                .addItem(new InputItem("username", "username: ",  getUserName("datasource")))
-                .addItem(new PassItem("password", "password: ",  getPassword("datasource")))
-                .addItem(new InputItem("schema", "schema: ",  properties.getValue("schema")))
-                .addItem(new InputItem("tables", "tables: ",  properties.getValue("tables")))
-                .addItem(new InputItem("package", "package: ",  properties.getValue("package")))
-                .addItem(new InputItem("mapperPackage", "mapperPackage: ",  properties.getValue("mapperPackage")))
-                .addItem(new InputItem("mapperXmlPathInResource", "mapperXmlPathInResource: ",  properties.getValue("mapperXmlPathInResource")))
+        return form.addItem(new InputItem("jdbcUrl", "jdbcUrl: ", getProperty("jdbcUrl", project)))
+                .addItem(new InputItem("username", "username: ", getUserName()))
+                .addItem(new PassItem("password", "password: ", getPassword()))
+                .addItem(new InputItem("schema", "schema: ", getProperty("schema", project)))
+                .addItem(new InputItem("tables", "tables: ", getProperty("tables", project)))
+                .addItem(new InputItem("package", "package: ", getProperty("package", project)))
+                .addItem(new InputItem("mapperPackage", "mapperPackage: ", getProperty("mapperPackage", project)))
+                .addItem(new InputItem("mapperXmlPathInResource", "mapperXmlPathInResource: ", getProperty("mapperXmlPathInResource", project)))
                 .buildPanel(8, 2);
     }
 
@@ -68,7 +71,6 @@ public class GenerateForm extends DialogWrapper {
             submitRunnable.run();
         });
         submitButton = submit;
-
 
 
         JButton testConnectionButton = new JButton("测试连接");
@@ -108,20 +110,15 @@ public class GenerateForm extends DialogWrapper {
 
         private Callback<GenerateForm> callback;
 
-        @SuppressWarnings("MissingRecentApi")
         @Override
         public void run() {
-            PropertiesComponent properties = PropertiesComponent.getInstance(project);
-            properties.setValue("jdbcUrl", getData().get("jdbcUrl"));
-            properties.setValue("schema", getData().get("schema"));
-            properties.setValue("tables", getData().get("tables"));
-            properties.setValue("package", getData().get("package"));
-            properties.setValue("mapperPackage", getData().get("mapperPackage"));
-            properties.setValue("mapperXmlPathInResource", getData().get("mapperXmlPathInResource"));
-
-            saveUserNameAndPassword("datasource", getData().get("username"), getData().get("password"));
-
-
+            saveProperty("jdbcUrl", getData().get("jdbcUrl"), true, project);
+            saveProperty("schema", getData().get("schema"), true, project);
+            saveProperty("tables", getData().get("tables"), true, project);
+            saveProperty("package", getData().get("package"), true, project);
+            saveProperty("mapperPackage", getData().get("mapperPackage"), true, project);
+            saveProperty("mapperXmlPathInResource", getData().get("mapperXmlPathInResource"), true, project);
+            saveUserNameAndPassword(getData().get("username"), getData().get("password"), true);
             if (callback != null) {
                 callback.run(GenerateForm.this);
             }
@@ -136,36 +133,78 @@ public class GenerateForm extends DialogWrapper {
         }
     }
 
+    private String getProperty(String key, Project project) {
+        PropertiesComponent properties = PropertiesComponent.getInstance(project);
+        if (StringUtils.isNotBlank(properties.getValue(key))) {
+            return properties.getValue(key);
+        } else {
+            PropertiesComponent global = PropertiesComponent.getInstance();
+            if (StringUtils.isNotBlank(global.getValue(key))) {
+                return global.getValue(key);
+            }
+        }
+        return null;
+    }
+
+    private void saveProperty(String key, String value, boolean global, Project project) {
+        if (global) {
+            PropertiesComponent globalProperties = PropertiesComponent.getInstance();
+            globalProperties.setValue(key, value);
+            return;
+        }
+        PropertiesComponent properties = PropertiesComponent.getInstance(project);
+        properties.setValue(key, value);
+    }
+
     @SuppressWarnings("MissingRecentApi")
-    private void saveUserNameAndPassword(String key, String username, String password) {
-        CredentialAttributes credentialAttributes = createCredentialAttributes(key);
+    private void saveUserNameAndPassword(String username, String password, boolean global) {
+
+        String sensitiveKey;
+        if (global){
+            sensitiveKey = GLOBAL_SENSITIVE_KEY;
+        }else {
+            sensitiveKey = project.getBasePath();
+        }
+        CredentialAttributes credentialAttributes = createCredentialAttributes(sensitiveKey);
         Credentials credentials = new Credentials(username, password);
         PasswordSafe.getInstance().set(credentialAttributes, credentials);
     }
 
     @SuppressWarnings("MissingRecentApi")
-    private String getUserName(String key) {
-        CredentialAttributes credentialAttributes = createCredentialAttributes(key);
+    private String getUserName() {
+        String sensitiveKey = project.getBasePath();
+        CredentialAttributes credentialAttributes = createCredentialAttributes(sensitiveKey);
         Credentials credentials = PasswordSafe.getInstance().get(credentialAttributes);
         if (credentials != null) {
             return credentials.getUserName();
+        }
+        CredentialAttributes globalCredentialAttributes = createCredentialAttributes(GLOBAL_SENSITIVE_KEY);
+        Credentials globalCredentials = PasswordSafe.getInstance().get(globalCredentialAttributes);
+        if (globalCredentials != null) {
+            return globalCredentials.getUserName();
         }
         return null;
     }
 
     @SuppressWarnings("MissingRecentApi")
-    private String getPassword(String key) {
-        CredentialAttributes credentialAttributes = createCredentialAttributes(key);
+    private String getPassword() {
+        String sensitiveKey = project.getBasePath();
+        CredentialAttributes credentialAttributes = createCredentialAttributes(sensitiveKey);
         Credentials credentials = PasswordSafe.getInstance().get(credentialAttributes);
         if (credentials != null) {
             return credentials.getPasswordAsString();
+        }
+        CredentialAttributes globalCredentialAttributes = createCredentialAttributes(GLOBAL_SENSITIVE_KEY);
+        Credentials globalCredentials = PasswordSafe.getInstance().get(globalCredentialAttributes);
+        if (globalCredentials != null) {
+            return globalCredentials.getPasswordAsString();
         }
         return null;
     }
 
     @SuppressWarnings("MissingRecentApi")
     private CredentialAttributes createCredentialAttributes(String key) {
-        return new CredentialAttributes(CredentialAttributesKt.generateServiceName("MySystem", key));
+        return new CredentialAttributes(CredentialAttributesKt.generateServiceName("mybatis-generator-plugin", key));
     }
 
 
