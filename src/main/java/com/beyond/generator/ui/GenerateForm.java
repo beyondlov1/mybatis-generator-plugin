@@ -1,5 +1,9 @@
 package com.beyond.generator.ui;
 
+import com.intellij.credentialStore.CredentialAttributes;
+import com.intellij.credentialStore.CredentialAttributesKt;
+import com.intellij.credentialStore.Credentials;
+import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -38,8 +42,8 @@ public class GenerateForm extends DialogWrapper {
     protected @Nullable JComponent createCenterPanel() {
         PropertiesComponent properties = PropertiesComponent.getInstance(project);
         return form.addItem(new InputItem("jdbcUrl", "jdbcUrl: ", properties.getValue("jdbcUrl")))
-                .addItem(new InputItem("username", "username: ",  properties.getValue("username")))
-                .addItem(new PassItem("password", "password: ",  properties.getValue("password")))
+                .addItem(new InputItem("username", "username: ",  getUserName("datasource")))
+                .addItem(new PassItem("password", "password: ",  getPassword("datasource")))
                 .addItem(new InputItem("schema", "schema: ",  properties.getValue("schema")))
                 .addItem(new InputItem("tables", "tables: ",  properties.getValue("tables")))
                 .addItem(new InputItem("package", "package: ",  properties.getValue("package")))
@@ -104,17 +108,20 @@ public class GenerateForm extends DialogWrapper {
 
         private Callback<GenerateForm> callback;
 
+        @SuppressWarnings("MissingRecentApi")
         @Override
         public void run() {
             PropertiesComponent properties = PropertiesComponent.getInstance(project);
             properties.setValue("jdbcUrl", getData().get("jdbcUrl"));
-            properties.setValue("username", getData().get("username"));
-            properties.setValue("password", getData().get("password"));
             properties.setValue("schema", getData().get("schema"));
             properties.setValue("tables", getData().get("tables"));
             properties.setValue("package", getData().get("package"));
             properties.setValue("mapperPackage", getData().get("mapperPackage"));
             properties.setValue("mapperXmlPathInResource", getData().get("mapperXmlPathInResource"));
+
+            saveUserNameAndPassword("datasource", getData().get("username"), getData().get("password"));
+
+
             if (callback != null) {
                 callback.run(GenerateForm.this);
             }
@@ -129,6 +136,37 @@ public class GenerateForm extends DialogWrapper {
         }
     }
 
+    @SuppressWarnings("MissingRecentApi")
+    private void saveUserNameAndPassword(String key, String username, String password) {
+        CredentialAttributes credentialAttributes = createCredentialAttributes(key);
+        Credentials credentials = new Credentials(username, password);
+        PasswordSafe.getInstance().set(credentialAttributes, credentials);
+    }
+
+    @SuppressWarnings("MissingRecentApi")
+    private String getUserName(String key) {
+        CredentialAttributes credentialAttributes = createCredentialAttributes(key);
+        Credentials credentials = PasswordSafe.getInstance().get(credentialAttributes);
+        if (credentials != null) {
+            return credentials.getUserName();
+        }
+        return null;
+    }
+
+    @SuppressWarnings("MissingRecentApi")
+    private String getPassword(String key) {
+        CredentialAttributes credentialAttributes = createCredentialAttributes(key);
+        Credentials credentials = PasswordSafe.getInstance().get(credentialAttributes);
+        if (credentials != null) {
+            return credentials.getPasswordAsString();
+        }
+        return null;
+    }
+
+    @SuppressWarnings("MissingRecentApi")
+    private CredentialAttributes createCredentialAttributes(String key) {
+        return new CredentialAttributes(CredentialAttributesKt.generateServiceName("MySystem", key));
+    }
 
 
     private class TestRunnable implements Runnable {
