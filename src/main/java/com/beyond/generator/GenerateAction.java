@@ -43,6 +43,9 @@ public class GenerateAction extends AnAction {
                 String pkg = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("package"));
                 String mapperPackage = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperPackage"));
                 String mapperXmlPathInResource = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperXmlPathInResource"));
+                String tableExcludePrefix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("tableExcludePrefix"));
+                String mapperSuffix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperSuffix"));
+                String mapperXmlSuffix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperXmlSuffix"));
 
                 MysqlDataSource dataSource = new MysqlDataSource();
                 dataSource.setUrl(jdbcUrl);
@@ -66,9 +69,9 @@ public class GenerateAction extends AnAction {
                         throw new RuntimeException("table not exist");
                     }
 
-                    JavaEntity javaEntity = writeEntity(project, table, columns, pkg);
-                    MapperEntity mapperEntity = writeMapper(project, javaEntity, mapperPackage);
-                    writeMapperXml(project, javaEntity, mapperEntity, columns, mapperXmlPathInResource);
+                    JavaEntity javaEntity = writeEntity(project, table, columns, pkg, tableExcludePrefix);
+                    MapperEntity mapperEntity = writeMapper(project, javaEntity, mapperPackage, mapperSuffix);
+                    writeMapperXml(project, javaEntity, mapperEntity, columns, mapperXmlPathInResource, mapperXmlSuffix);
                 }
 
                 form.close(OK_EXIT_CODE);
@@ -113,7 +116,7 @@ public class GenerateAction extends AnAction {
     }
 
 
-    private JavaEntity writeEntity(Project project, String table, List<Column> columns, String pkg) {
+    private JavaEntity writeEntity(Project project, String table, List<Column> columns, String pkg,String excludePrefix) {
         if (org.apache.commons.lang3.StringUtils.isBlank(pkg)) {
             return null;
         }
@@ -126,7 +129,13 @@ public class GenerateAction extends AnAction {
         List<String> imports = new ArrayList<>();
         imports.add("lombok.Data");
         javaEntity.setImports(imports);
-        javaEntity.setClassName(org.apache.commons.lang3.StringUtils.capitalize(StringUtils.lineToHump(table)));
+        String modifiedTableName;
+        if ( org.apache.commons.lang3.StringUtils.isNotBlank(excludePrefix)){
+            modifiedTableName = org.apache.commons.lang3.StringUtils.substringAfter(table, excludePrefix);
+        }else{
+            modifiedTableName = table;
+        }
+        javaEntity.setClassName(org.apache.commons.lang3.StringUtils.capitalize(StringUtils.lineToHump(modifiedTableName)));
         for (Column column : columns) {
             Class<?> aClass = TypeConverter.toJavaType(column.getDataType());
             if (!aClass.getName().startsWith("java.lang")) {
@@ -148,17 +157,21 @@ public class GenerateAction extends AnAction {
     }
 
 
-    private MapperEntity writeMapper(Project project, JavaEntity javaEntity, String mapperPackage) {
+    private MapperEntity writeMapper(Project project, JavaEntity javaEntity, String mapperPackage, String mapperSuffix) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(mapperSuffix)){
+            mapperSuffix = "Mapper";
+        }
+        mapperSuffix = org.apache.commons.lang3.StringUtils.capitalize(mapperSuffix);
         if (org.apache.commons.lang3.StringUtils.isBlank(mapperPackage)) {
             return null;
         }
         String javaPath = PluginUtils.getProjectJavaPath(project);
         String targetDir = PathUtils.concat(javaPath, mapperPackage.split("\\."));
         FreeMarkerWriter freeMarkerWriter =
-                new FreeMarkerWriter("", "mapper.ftl", targetDir, javaEntity.getClassName() + "Mapper.java");
+                new FreeMarkerWriter("", "mapper.ftl", targetDir, javaEntity.getClassName() + mapperSuffix+".java");
 
         MapperEntity mapperEntity = new MapperEntity();
-        mapperEntity.setMapperName(javaEntity.getClassName() + "Mapper");
+        mapperEntity.setMapperName(javaEntity.getClassName() + mapperSuffix);
         mapperEntity.setPackageName(mapperPackage);
         List<String> imports = new ArrayList<String>();
 //        if (!javaEntity.getPackageName().equals(mapperPackage)){
@@ -171,17 +184,22 @@ public class GenerateAction extends AnAction {
     }
 
 
-    private void writeMapperXml(Project project, JavaEntity javaEntity, MapperEntity mapperEntity, List<Column> columns, String mapperXmlPathInResource) {
+    private void writeMapperXml(Project project, JavaEntity javaEntity, MapperEntity mapperEntity, List<Column> columns, String mapperXmlPathInResource, String mapperXmlSuffix) {
         if (org.apache.commons.lang3.StringUtils.isBlank(mapperXmlPathInResource)) {
             return;
         }
         if (mapperEntity == null) {
             return;
         }
+        if (org.apache.commons.lang3.StringUtils.isBlank(mapperXmlSuffix)){
+            mapperXmlSuffix = "Mapper";
+        }
+        mapperXmlSuffix = org.apache.commons.lang3.StringUtils.capitalize(mapperXmlSuffix);
+
         String resources = PathUtils.concat(PluginUtils.getProjectSrcPath(project), "main", "resources");
         String targetDir = PathUtils.concat(resources, mapperXmlPathInResource);
         FreeMarkerWriter freeMarkerWriter =
-                new FreeMarkerWriter("", "mapperxml.ftl", targetDir, javaEntity.getClassName() + "Mapper.xml");
+                new FreeMarkerWriter("", "mapperxml.ftl", targetDir, javaEntity.getClassName() + mapperXmlSuffix +".xml");
 
         MapperXmlEntity mapperXmlEntity = new MapperXmlEntity();
         mapperXmlEntity.setEntityClassFullName(javaEntity.getPackageName() + "." + javaEntity.getClassName());

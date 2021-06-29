@@ -52,7 +52,10 @@ public class GenerateForm extends DialogWrapper {
                 .addItem(new InputItem("package", "package: ", getProperty("package", project)))
                 .addItem(new InputItem("mapperPackage", "mapperPackage: ", getProperty("mapperPackage", project)))
                 .addItem(new InputItem("mapperXmlPathInResource", "mapperXmlPathInResource: ", getProperty("mapperXmlPathInResource", project)))
-                .buildPanel(8, 2);
+                .addItem(new InputItem("tableExcludePrefix", "tableExcludePrefix: ", getProperty("tableExcludePrefix", project)))
+                .addItem(new InputItem("mapperSuffix", "mapperSuffix: ", getProperty("mapperSuffix", project)))
+                .addItem(new InputItem("mapperXmlSuffix", "mapperXmlSuffix: ", getProperty("mapperXmlSuffix", project)))
+                .buildPanel(11, 2);
     }
 
 
@@ -118,6 +121,9 @@ public class GenerateForm extends DialogWrapper {
             saveProperty("package", getData().get("package"), true, project);
             saveProperty("mapperPackage", getData().get("mapperPackage"), true, project);
             saveProperty("mapperXmlPathInResource", getData().get("mapperXmlPathInResource"), true, project);
+            saveProperty("tableExcludePrefix", getData().get("tableExcludePrefix"), true, project);
+            saveProperty("mapperSuffix", getData().get("mapperSuffix"), true, project);
+            saveProperty("mapperXmlSuffix", getData().get("mapperXmlSuffix"), true, project);
             saveUserNameAndPassword(getData().get("username"), getData().get("password"), true);
             if (callback != null) {
                 callback.run(GenerateForm.this);
