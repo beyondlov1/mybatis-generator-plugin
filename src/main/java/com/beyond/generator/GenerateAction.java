@@ -44,6 +44,7 @@ public class GenerateAction extends AnAction {
                 String mapperPackage = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperPackage"));
                 String mapperXmlPathInResource = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperXmlPathInResource"));
                 String tableExcludePrefix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("tableExcludePrefix"));
+                String tablePrefix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("tablePrefix"));
                 String mapperSuffix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperSuffix"));
                 String mapperXmlSuffix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperXmlSuffix"));
 
@@ -69,7 +70,7 @@ public class GenerateAction extends AnAction {
                         throw new RuntimeException("table not exist");
                     }
 
-                    JavaEntity javaEntity = writeEntity(project, table, columns, pkg, tableExcludePrefix);
+                    JavaEntity javaEntity = writeEntity(project, table, columns, pkg, tableExcludePrefix,tablePrefix);
                     MapperEntity mapperEntity = writeMapper(project, javaEntity, mapperPackage, mapperSuffix);
                     writeMapperXml(project, javaEntity, mapperEntity, columns, mapperXmlPathInResource, mapperXmlSuffix);
                 }
@@ -116,7 +117,7 @@ public class GenerateAction extends AnAction {
     }
 
 
-    private JavaEntity writeEntity(Project project, String table, List<Column> columns, String pkg,String excludePrefix) {
+    private JavaEntity writeEntity(Project project, String table, List<Column> columns, String pkg,String excludePrefix, String tablePrefix) {
         if (org.apache.commons.lang3.StringUtils.isBlank(pkg)) {
             return null;
         }
@@ -134,6 +135,9 @@ public class GenerateAction extends AnAction {
             modifiedTableName = org.apache.commons.lang3.StringUtils.substringAfter(table, excludePrefix);
         }else{
             modifiedTableName = table;
+        }
+        if ( org.apache.commons.lang3.StringUtils.isNotBlank(tablePrefix)){
+            modifiedTableName = StringUtils.lineToHump(tablePrefix) + org.apache.commons.lang3.StringUtils.capitalize(modifiedTableName);
         }
         javaEntity.setClassName(org.apache.commons.lang3.StringUtils.capitalize(StringUtils.lineToHump(modifiedTableName)));
         for (Column column : columns) {

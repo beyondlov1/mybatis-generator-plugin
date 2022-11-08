@@ -1,2 +1,14 @@
-rootProject.name = 'mybatis-generator-plugin'
 
+
+pluginManagement {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        maven{ url'http://maven.aliyun.com/nexus/content/groups/public/' }
+        maven{ url'http://maven.aliyun.com/nexus/content/repositories/jcenter'}
+        maven{url"https://cache-redirector.jetbrains.com/plugins.gradle.org"}
+        maven{url"https://cache-redirector.jetbrains.com/packages.jetbrains.team/maven/p/intellij-plugin-verifier/intellij-plugin-structure"}
+    }
+}
+
+rootProject.name = 'mybatis-generator-plugin'

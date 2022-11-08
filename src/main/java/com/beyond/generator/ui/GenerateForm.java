@@ -53,9 +53,10 @@ public class GenerateForm extends DialogWrapper {
                 .addItem(new InputItem("mapperPackage", "mapperPackage: ", getProperty("mapperPackage", project)))
                 .addItem(new InputItem("mapperXmlPathInResource", "mapperXmlPathInResource: ", getProperty("mapperXmlPathInResource", project)))
                 .addItem(new InputItem("tableExcludePrefix", "tableExcludePrefix: ", getProperty("tableExcludePrefix", project)))
+                .addItem(new InputItem("tablePrefix", "tablePrefix: ", getProperty("tablePrefix", project)))
                 .addItem(new InputItem("mapperSuffix", "mapperSuffix: ", getProperty("mapperSuffix", project)))
                 .addItem(new InputItem("mapperXmlSuffix", "mapperXmlSuffix: ", getProperty("mapperXmlSuffix", project)))
-                .buildPanel(11, 2);
+                .buildPanel(12, 2);
     }
 
 
@@ -64,7 +65,7 @@ public class GenerateForm extends DialogWrapper {
 
         //定义表单的提交按钮，放置到IDEA会话框的底部位置
         JPanel south = new JPanel();
-        JButton submit = new JButton("确定");
+        JButton submit = new JButton("OK");
         submit.setHorizontalAlignment(SwingConstants.CENTER); //水平居中
         submit.setVerticalAlignment(SwingConstants.CENTER); //垂直居中
         south.add(submit);
@@ -76,7 +77,7 @@ public class GenerateForm extends DialogWrapper {
         submitButton = submit;
 
 
-        JButton testConnectionButton = new JButton("测试连接");
+        JButton testConnectionButton = new JButton("TEST CONNECTION");
         testConnectionButton.setHorizontalAlignment(SwingConstants.CENTER); //水平居中
         testConnectionButton.setVerticalAlignment(SwingConstants.CENTER); //垂直居中
         south.add(testConnectionButton);
@@ -115,16 +116,7 @@ public class GenerateForm extends DialogWrapper {
 
         @Override
         public void run() {
-            saveProperty("jdbcUrl", getData().get("jdbcUrl"), true, project);
-            saveProperty("schema", getData().get("schema"), true, project);
-            saveProperty("tables", getData().get("tables"), true, project);
-            saveProperty("package", getData().get("package"), true, project);
-            saveProperty("mapperPackage", getData().get("mapperPackage"), true, project);
-            saveProperty("mapperXmlPathInResource", getData().get("mapperXmlPathInResource"), true, project);
-            saveProperty("tableExcludePrefix", getData().get("tableExcludePrefix"), true, project);
-            saveProperty("mapperSuffix", getData().get("mapperSuffix"), true, project);
-            saveProperty("mapperXmlSuffix", getData().get("mapperXmlSuffix"), true, project);
-            saveUserNameAndPassword(getData().get("username"), getData().get("password"), true);
+            saveFormProperties();
             if (callback != null) {
                 callback.run(GenerateForm.this);
             }
@@ -150,6 +142,20 @@ public class GenerateForm extends DialogWrapper {
             }
         }
         return null;
+    }
+
+    private void saveFormProperties() {
+        saveProperty("jdbcUrl", getData().get("jdbcUrl"), true, project);
+        saveProperty("schema", getData().get("schema"), true, project);
+        saveProperty("tables", getData().get("tables"), true, project);
+        saveProperty("package", getData().get("package"), true, project);
+        saveProperty("mapperPackage", getData().get("mapperPackage"), true, project);
+        saveProperty("mapperXmlPathInResource", getData().get("mapperXmlPathInResource"), true, project);
+        saveProperty("tableExcludePrefix", getData().get("tableExcludePrefix"), true, project);
+        saveProperty("tablePrefix", getData().get("tablePrefix"), true, project);
+        saveProperty("mapperSuffix", getData().get("mapperSuffix"), true, project);
+        saveProperty("mapperXmlSuffix", getData().get("mapperXmlSuffix"), true, project);
+        saveUserNameAndPassword(getData().get("username"), getData().get("password"), true);
     }
 
     private void saveProperty(String key, String value, boolean global, Project project) {
@@ -220,6 +226,7 @@ public class GenerateForm extends DialogWrapper {
 
         @Override
         public void run() {
+            saveFormProperties();
             if (callback != null) {
                 callback.run(GenerateForm.this);
             }

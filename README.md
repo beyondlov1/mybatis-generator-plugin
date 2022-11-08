@@ -1,7 +1,24 @@
 # mybatis-generator-plugin
 生成mybatis相关文件：entity, mapper, mapperxml
 
-编译打包时依赖 mybatis-generate
+### build
+```
+编译打包依赖 mybatis-generate
+
+https://www.jetbrains.com/idea/download/other.html 下载 2020.2.4
+
+解压到: C:\Users\XXX\.gradle\caches\modules-2\files-2.1\com.jetbrains.intellij.idea\ideaIC\2020.2.4\5685bc139ed2e2c7f1113ac7a9d8f5fc5e3f0334\ideaIC-2020.2.4
+
+修改 build.gradle: 
+intellij {
+    updateSinceUntilBuild false
+    localPath = 'C:\\Users\\Administrator\\.gradle\\caches\\modules-2\\files-2.1\\com.jetbrains.intellij.idea\\ideaIC\\2020.2.4\\5685bc139ed2e2c7f1113ac7a9d8f5fc5e3f0334\\ideaIC-2020.2.4'
+}
+
+## 参考: https://blog.csdn.net/q258523454/article/details/120890772
+
+
+```
 
 ### 限制
 1. 只支持mysql

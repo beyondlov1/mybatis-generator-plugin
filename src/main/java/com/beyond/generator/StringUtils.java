@@ -14,7 +14,7 @@ public class StringUtils {
 
     /**
      * 驼峰转下划线
-     * @param str 驼峰字符串
+     * @param str 驼峰
      * @return 下划线字符串
      */
     public static String humpToLine(String str) {
