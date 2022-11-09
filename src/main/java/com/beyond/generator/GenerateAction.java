@@ -71,7 +71,7 @@ public class GenerateAction extends AnAction {
                     }
 
                     JavaEntity javaEntity = writeEntity(project, table, columns, pkg, tableExcludePrefix,tablePrefix);
-                    MapperEntity mapperEntity = writeMapper(project, javaEntity, mapperPackage, mapperSuffix);
+                    MapperEntity mapperEntity = writeMapper(project, javaEntity, mapperPackage, mapperSuffix, schema, table);
                     writeMapperXml(project, javaEntity, mapperEntity, columns, mapperXmlPathInResource, mapperXmlSuffix);
                 }
 
@@ -161,7 +161,7 @@ public class GenerateAction extends AnAction {
     }
 
 
-    private MapperEntity writeMapper(Project project, JavaEntity javaEntity, String mapperPackage, String mapperSuffix) {
+    private MapperEntity writeMapper(Project project, JavaEntity javaEntity, String mapperPackage, String mapperSuffix, String schema, String table) {
         if (org.apache.commons.lang3.StringUtils.isBlank(mapperSuffix)){
             mapperSuffix = "Mapper";
         }
@@ -177,6 +177,8 @@ public class GenerateAction extends AnAction {
         MapperEntity mapperEntity = new MapperEntity();
         mapperEntity.setMapperName(javaEntity.getClassName() + mapperSuffix);
         mapperEntity.setPackageName(mapperPackage);
+        mapperEntity.setTableFullName(schema+"."+table);
+        mapperEntity.setEntityName(javaEntity.getClassName());
         List<String> imports = new ArrayList<String>();
 //        if (!javaEntity.getPackageName().equals(mapperPackage)){
 //            imports.add(javaEntity.getPackageName()+"."+javaEntity.getClassName());
