@@ -3,12 +3,19 @@ plugins {
     id 'org.jetbrains.intellij' version '0.6.5'
 }
 
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
 group 'org.beyond'
 version '1.0'
 
 repositories {
     mavenCentral()
     mavenLocal()
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
 }
 
 dependencies {

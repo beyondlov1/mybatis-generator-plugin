@@ -1,8 +1,8 @@
 <idea-plugin>
-  <id>com.your.company.unique.plugin.id</id>
+  <id>com.beyond.plugin.mybatis.generator</id>
   <name>Mybatis-Generator</name>
   <version>1.0</version>
-  <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">Beyond</vendor>
+  <vendor email="support@beyond.com" url="http://www.beyond.com">Beyond</vendor>
 
   <description>
     description

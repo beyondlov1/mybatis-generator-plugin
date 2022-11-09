@@ -18,6 +18,9 @@ intellij {
 ## 参考: https://blog.csdn.net/q258523454/article/details/120890772
 
 
+gradle 设置要使用 jdk11
+buildPlugin 打包
+
 ```
 
 ### 限制
