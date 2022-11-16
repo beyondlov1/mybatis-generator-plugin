@@ -73,7 +73,7 @@ public class GenerateAction extends AnAction {
                     }
 
                     JavaEntity javaEntity = writeEntity(project, schema, table, columns, pkg, tableExcludePrefix, tablePrefix, Boolean.parseBoolean(forMyBatisPlus));
-                    MapperEntity mapperEntity = writeMapper(project, javaEntity, mapperPackage, mapperSuffix, schema, table);
+                    MapperEntity mapperEntity = writeMapper(project, javaEntity, mapperPackage, mapperSuffix, schema, table, Boolean.parseBoolean(forMyBatisPlus));
                     writeMapperXml(project, javaEntity, mapperEntity, columns, mapperXmlPathInResource, mapperXmlSuffix);
                 }
 
@@ -199,7 +199,7 @@ public class GenerateAction extends AnAction {
     }
 
 
-    private MapperEntity writeMapper(Project project, JavaEntity javaEntity, String mapperPackage, String mapperSuffix, String schema, String table) {
+    private MapperEntity writeMapper(Project project, JavaEntity javaEntity, String mapperPackage, String mapperSuffix, String schema, String table, boolean forMyBatisPlus) {
         if (org.apache.commons.lang3.StringUtils.isBlank(mapperSuffix)) {
             mapperSuffix = "Mapper";
         }
@@ -221,7 +221,14 @@ public class GenerateAction extends AnAction {
 //        if (!javaEntity.getPackageName().equals(mapperPackage)){
 //            imports.add(javaEntity.getPackageName()+"."+javaEntity.getClassName());
 //        }
+
+        if (forMyBatisPlus){
+            mapperEntity.setSuperMapperName("BaseMapper<"+javaEntity.getClassName()+">");
+            imports.add(javaEntity.getPackageName()+"."+javaEntity.getClassName());
+        }
+
         imports.add("org.apache.ibatis.annotations.Mapper");
+        imports.add("com.baomidou.mybatisplus.core.mapper.BaseMapper");
         mapperEntity.setImports(imports);
         freeMarkerWriter.write(mapperEntity);
         return mapperEntity;
