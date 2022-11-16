@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
 
@@ -47,6 +48,7 @@ public class GenerateAction extends AnAction {
                 String tablePrefix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("tablePrefix"));
                 String mapperSuffix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperSuffix"));
                 String mapperXmlSuffix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperXmlSuffix"));
+                String forMyBatisPlus = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("forMyBatisPlus"));
 
                 MysqlDataSource dataSource = new MysqlDataSource();
                 dataSource.setUrl(jdbcUrl);
@@ -56,10 +58,10 @@ public class GenerateAction extends AnAction {
                 jdbcTemplate.setDataSource(dataSource);
 
                 List<String> tableList;
-                if (org.apache.commons.lang3.StringUtils.isBlank(tables)){
+                if (org.apache.commons.lang3.StringUtils.isBlank(tables)) {
                     String sql = String.format("select TABLE_NAME from information_schema.COLUMNS where TABLE_SCHEMA = '%s' group by TABLE_NAME", schema);
                     tableList = jdbcTemplate.queryForList(sql, String.class);
-                }else {
+                } else {
                     tableList = Arrays.asList(org.apache.commons.lang3.StringUtils.split(tables, ","));
                 }
                 for (String table : tableList) {
@@ -70,7 +72,7 @@ public class GenerateAction extends AnAction {
                         throw new RuntimeException("table not exist");
                     }
 
-                    JavaEntity javaEntity = writeEntity(project, table, columns, pkg, tableExcludePrefix,tablePrefix);
+                    JavaEntity javaEntity = writeEntity(project, schema, table, columns, pkg, tableExcludePrefix, tablePrefix, Boolean.parseBoolean(forMyBatisPlus));
                     MapperEntity mapperEntity = writeMapper(project, javaEntity, mapperPackage, mapperSuffix, schema, table);
                     writeMapperXml(project, javaEntity, mapperEntity, columns, mapperXmlPathInResource, mapperXmlSuffix);
                 }
@@ -117,7 +119,7 @@ public class GenerateAction extends AnAction {
     }
 
 
-    private JavaEntity writeEntity(Project project, String table, List<Column> columns, String pkg,String excludePrefix, String tablePrefix) {
+    private JavaEntity writeEntity(Project project,  String schema, String table, List<Column> columns, String pkg, String excludePrefix, String tablePrefix, boolean forMyBatisPlus) {
         if (org.apache.commons.lang3.StringUtils.isBlank(pkg)) {
             return null;
         }
@@ -129,18 +131,46 @@ public class GenerateAction extends AnAction {
         javaEntity.setPackageName(pkg);
         List<String> imports = new ArrayList<>();
         imports.add("lombok.Data");
+        if (forMyBatisPlus) {
+            imports.add("com.baomidou.mybatisplus.annotation.IdType");
+            imports.add("com.baomidou.mybatisplus.annotation.TableField");
+            imports.add("com.baomidou.mybatisplus.annotation.TableId");
+            imports.add("com.baomidou.mybatisplus.annotation.TableName");
+        }
         javaEntity.setImports(imports);
         String modifiedTableName;
-        if ( org.apache.commons.lang3.StringUtils.isNotBlank(excludePrefix)){
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(excludePrefix)) {
             modifiedTableName = org.apache.commons.lang3.StringUtils.substringAfter(table, excludePrefix);
-        }else{
+        } else {
             modifiedTableName = table;
         }
-        if ( org.apache.commons.lang3.StringUtils.isNotBlank(tablePrefix)){
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(tablePrefix)) {
             modifiedTableName = StringUtils.lineToHump(tablePrefix) + org.apache.commons.lang3.StringUtils.capitalize(modifiedTableName);
         }
         javaEntity.setClassName(org.apache.commons.lang3.StringUtils.capitalize(StringUtils.lineToHump(modifiedTableName)));
-        for (Column column : columns) {
+
+        List<Column> normalCols = columns;
+        Column idCol = null;
+        List<Column> ids = columns.stream().filter(x -> "PRI".equals(x.getColumnKey())).collect(Collectors.toList());
+        if (ids.size() == 1){
+            normalCols = columns.stream().filter(x -> !"PRI".equals(x.getColumnKey())).collect(Collectors.toList());
+            idCol = ids.get(0);
+        }
+        if (idCol != null){
+            Class<?> aClass = TypeConverter.toJavaType(idCol.getDataType());
+            if (!aClass.getName().startsWith("java.lang")) {
+                if (!imports.contains(aClass.getName())) {
+                    imports.add(aClass.getName());
+                }
+            }
+            JavaEntity.FieldEntity fieldEntity = new JavaEntity.FieldEntity();
+            fieldEntity.setType(aClass.getSimpleName());
+            fieldEntity.setName(StringUtils.lineToHump(idCol.getColumnName()));
+            fieldEntity.setComment(idCol.getColumnComment());
+            javaEntity.setId(fieldEntity);
+        }
+
+        for (Column column : normalCols) {
             Class<?> aClass = TypeConverter.toJavaType(column.getDataType());
             if (!aClass.getName().startsWith("java.lang")) {
                 if (!imports.contains(aClass.getName())) {
@@ -153,16 +183,24 @@ public class GenerateAction extends AnAction {
             fieldEntity.setComment(column.getColumnComment());
             javaEntity.getFields().add(fieldEntity);
         }
+        javaEntity.setTableFullName(schema+"."+table);
 
-        FreeMarkerWriter freeMarkerWriter =
-                new FreeMarkerWriter("", "entity.ftl", targetDir, javaEntity.getClassName() + ".java");
-        freeMarkerWriter.write(javaEntity);
+        if (forMyBatisPlus) {
+            FreeMarkerWriter freeMarkerWriter =
+                    new FreeMarkerWriter("", "entity_mybatisplus.ftl", targetDir, javaEntity.getClassName() + ".java");
+            freeMarkerWriter.write(javaEntity.toGen(false));
+        } else {
+            FreeMarkerWriter freeMarkerWriter =
+                    new FreeMarkerWriter("", "entity.ftl", targetDir, javaEntity.getClassName() + ".java");
+            freeMarkerWriter.write(javaEntity.toGen(false));
+        }
+
         return javaEntity;
     }
 
 
     private MapperEntity writeMapper(Project project, JavaEntity javaEntity, String mapperPackage, String mapperSuffix, String schema, String table) {
-        if (org.apache.commons.lang3.StringUtils.isBlank(mapperSuffix)){
+        if (org.apache.commons.lang3.StringUtils.isBlank(mapperSuffix)) {
             mapperSuffix = "Mapper";
         }
         mapperSuffix = org.apache.commons.lang3.StringUtils.capitalize(mapperSuffix);
@@ -172,12 +210,12 @@ public class GenerateAction extends AnAction {
         String javaPath = PluginUtils.getProjectJavaPath(project);
         String targetDir = PathUtils.concat(javaPath, mapperPackage.split("\\."));
         FreeMarkerWriter freeMarkerWriter =
-                new FreeMarkerWriter("", "mapper.ftl", targetDir, javaEntity.getClassName() + mapperSuffix+".java");
+                new FreeMarkerWriter("", "mapper.ftl", targetDir, javaEntity.getClassName() + mapperSuffix + ".java");
 
         MapperEntity mapperEntity = new MapperEntity();
         mapperEntity.setMapperName(javaEntity.getClassName() + mapperSuffix);
         mapperEntity.setPackageName(mapperPackage);
-        mapperEntity.setTableFullName(schema+"."+table);
+        mapperEntity.setTableFullName(schema + "." + table);
         mapperEntity.setEntityName(javaEntity.getClassName());
         List<String> imports = new ArrayList<String>();
 //        if (!javaEntity.getPackageName().equals(mapperPackage)){
@@ -197,7 +235,7 @@ public class GenerateAction extends AnAction {
         if (mapperEntity == null) {
             return;
         }
-        if (org.apache.commons.lang3.StringUtils.isBlank(mapperXmlSuffix)){
+        if (org.apache.commons.lang3.StringUtils.isBlank(mapperXmlSuffix)) {
             mapperXmlSuffix = "Mapper";
         }
         mapperXmlSuffix = org.apache.commons.lang3.StringUtils.capitalize(mapperXmlSuffix);
@@ -205,7 +243,7 @@ public class GenerateAction extends AnAction {
         String resources = PathUtils.concat(PluginUtils.getProjectSrcPath(project), "main", "resources");
         String targetDir = PathUtils.concat(resources, mapperXmlPathInResource);
         FreeMarkerWriter freeMarkerWriter =
-                new FreeMarkerWriter("", "mapperxml.ftl", targetDir, javaEntity.getClassName() + mapperXmlSuffix +".xml");
+                new FreeMarkerWriter("", "mapperxml.ftl", targetDir, javaEntity.getClassName() + mapperXmlSuffix + ".xml");
 
         MapperXmlEntity mapperXmlEntity = new MapperXmlEntity();
         mapperXmlEntity.setEntityClassFullName(javaEntity.getPackageName() + "." + javaEntity.getClassName());
