@@ -19,7 +19,11 @@ import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.impl.source.PsiClassReferenceType;
+import com.intellij.psi.impl.source.PsiMethodImpl;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.javadoc.PsiDocTagValue;
@@ -32,6 +36,8 @@ import org.jdom.input.SAXBuilder;
 import org.jdom.xpath.XPath;
 import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
+import java.io.StringBufferInputStream;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,15 +50,62 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
 
-        PsiDocumentManager psiDocumentManager = PsiDocumentManager
-                .getInstance(project);
+        PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
+
+
         PsiFile containingFile = element.getContainingFile();
         Document document = psiDocumentManager.getDocument(containingFile);
         PsiClass containingClass = PsiElementUtil.getContainingClass(element);
 
-        String methodName = getPrevWord(document, editor);
-        if (StringUtils.isBlank(methodName)) return;
+        if (containingClass.isInterface()){
+            String methodName = getPrevWord(document, editor);
+            if (StringUtils.isBlank(methodName)) return;
 
+            gen(project, editor,psiDocumentManager, document, containingClass, methodName);
+        }else{
+            PsiClass psiClass;
+            try {
+                String methodName = element.getPrevSibling().getFirstChild().getLastChild().getText();
+                psiClass = ((PsiClassReferenceType) ((PsiField) ((PsiReferenceExpression) element.getPrevSibling().getFirstChild().getFirstChild()).resolve()).getType()).resolve();
+                if (psiClass != null && psiClass.isInterface() && psiClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null){
+                    VirtualFile classVirtualFile = psiClass.getContainingFile().getVirtualFile();
+                    Document classDocument = FileDocumentManager.getInstance().getDocument(classVirtualFile);
+                    if (classDocument != null){
+                        gen2(project, psiDocumentManager, classDocument, psiClass, methodName, classDocument.getText().lastIndexOf("}"));
+                    }
+                }
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void gen2(@NotNull Project project, PsiDocumentManager psiDocumentManager,  Document document, PsiClass containingClass, String methodName, int start) {
+        String entityName = "";
+        PsiDocComment docComment = containingClass.getDocComment();
+        if (docComment!= null){
+            PsiDocTag tag = docComment.findTagByName("entity");
+            if (tag != null){
+                PsiDocTagValue valueElement = tag.getValueElement();
+                if (valueElement != null){
+                    entityName = valueElement.getText();
+                }
+            }
+        }
+
+        String paramFragment = FragmentGenUtils.createParamFragment(methodName);
+        if (methodName.startsWith("getAll")){
+            entityName = String.format("List<%s>", entityName);
+        }
+        document.insertString(start , "    "+entityName + " ");
+        document.insertString(start +  entityName.length() + 5, methodName);
+        document.insertString(start +  entityName.length() + 5 + methodName.length(), paramFragment + ";\n");
+        PsiDocumentUtils.commitAndSaveDocument(psiDocumentManager, document);
+
+        genMapperXmlFragment(project,  psiDocumentManager, containingClass,docComment, methodName);
+    }
+
+    private void gen(@NotNull Project project, Editor editor, PsiDocumentManager psiDocumentManager,  Document document, PsiClass containingClass, String methodName) {
         String entityName = "";
         PsiDocComment docComment = containingClass.getDocComment();
         if (docComment!= null){
@@ -76,14 +129,17 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         editor.getSelectionModel().setSelection(newEnd, newEnd);
         PsiDocumentUtils.commitAndSaveDocument(psiDocumentManager, document);
 
+        genMapperXmlFragment(project,  psiDocumentManager, containingClass,docComment, methodName);
+    }
 
-        String qualifiedName = containingClass.getQualifiedName();
+    private void genMapperXmlFragment(@NotNull Project project,  PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment, String methodName) {
+
+        String qualifiedName = mapperClass.getQualifiedName();
         VirtualFile mapperXmlFile = findMapperXmlByName(qualifiedName, ProjectUtil.guessProjectDir(project));
 
-
         String tableName = "xxxxxx";
-        if (docComment!= null){
-            PsiDocTag tableTag = docComment.findTagByName("table");
+        if (mapperDocComment!= null){
+            PsiDocTag tableTag = mapperDocComment.findTagByName("table");
             if (tableTag != null){
                 PsiDocTagValue valueElement = tableTag.getValueElement();
                 if (valueElement != null){
@@ -93,13 +149,14 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         }
 
         try {
-            Document xmldoc = FileDocumentManager.getInstance().getCachedDocument(mapperXmlFile);
+            Document xmldoc = FileDocumentManager.getInstance().getDocument(mapperXmlFile);
             if (xmldoc != null){
                 String xml = xmldoc.getText();
 
                 try {
                     SAXBuilder sb = new SAXBuilder();
-                    org.jdom.Document doc = sb.build(VfsUtil.virtualToIoFile(mapperXmlFile));
+                    StringReader xmlStringReader = new StringReader(xmldoc.getText());
+                    org.jdom.Document doc = sb.build(xmlStringReader);
                     Element root = doc.getRootElement();
                     List<Attribute> idAttrs = (List<Attribute>) XPath.selectNodes(root, "//mapper/select/@id");
 
@@ -155,20 +212,23 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
                 if (file.isDirectory()) return super.visitFile(file);
                 String extension = file.getExtension();
                 if (StringUtils.equals(extension, "xml")) {
-                    try {
-                        SAXBuilder sb = new SAXBuilder();
-                        org.jdom.Document doc = sb.build(VfsUtil.virtualToIoFile(file));
-                        Element root = doc.getRootElement();
-                        Attribute namespaceText = (Attribute) XPath.selectSingleNode(root, "//mapper/@namespace");
+                    Document xmldoc = FileDocumentManager.getInstance().getDocument(file);
+                    if (xmldoc != null){
+                        try {
+                            SAXBuilder sb = new SAXBuilder();
+                            org.jdom.Document doc = sb.build(new StringReader(xmldoc.getText()));
+                            Element root = doc.getRootElement();
+                            Attribute namespaceText = (Attribute) XPath.selectSingleNode(root, "//mapper/@namespace");
 
-                        if (namespaceText != null) {
-                            String namespace = namespaceText.getValue();
-                            if (StringUtils.equals(namespace, mapperFullName)) {
-                                found[0] = file;
+                            if (namespaceText != null) {
+                                String namespace = namespaceText.getValue();
+                                if (StringUtils.equals(namespace, mapperFullName)) {
+                                    found[0] = file;
+                                }
                             }
+                        } catch (IOException | JDOMException e) {
+                            e.printStackTrace();
                         }
-                    } catch (IOException | JDOMException e) {
-                        e.printStackTrace();
                     }
                 }
                 return super.visitFile(file);
@@ -197,13 +257,30 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement element) {
         PsiClass containingClass = PsiElementUtil.getContainingClass(element);
-        if (containingClass!=null){
-            return containingClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null;
+        String methodName = getPrevWord(editor.getDocument(), editor);
+        if (containingClass!=null
+                && StringUtils.isNotBlank(methodName)
+                && methodName.startsWith("get")
+                && containingClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null){
+            return true;
         }
 
-        String methodName = getPrevWord(editor.getDocument(), editor);
-        if (StringUtils.isBlank(methodName)) return false;
-        if (methodName.startsWith("get")) return true;
+        try {
+            String methodName2 = element.getPrevSibling().getFirstChild().getLastChild().getText();
+            if (StringUtils.isNotBlank(methodName2) && methodName2.startsWith("get")){
+                PsiClass psiClass = ((PsiClassReferenceType) ((PsiField) ((PsiReferenceExpression) element.getPrevSibling().getFirstChild().getFirstChild()).resolve()).getType()).resolve();
+                if (psiClass != null && psiClass.isInterface() && psiClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null){
+                    VirtualFile classVirtualFile = psiClass.getContainingFile().getVirtualFile();
+                    Document classDocument = FileDocumentManager.getInstance().getDocument(classVirtualFile);
+                    if (classDocument != null){
+                        return true;
+                    }
+                }
+            }
+        }catch (Exception ignore){
+
+        }
+
         return false;
     }
 

@@ -228,7 +228,9 @@ public class GenerateAction extends AnAction {
         }
 
         imports.add("org.apache.ibatis.annotations.Mapper");
-        imports.add("com.baomidou.mybatisplus.core.mapper.BaseMapper");
+        if (forMyBatisPlus){
+            imports.add("com.baomidou.mybatisplus.core.mapper.BaseMapper");
+        }
         mapperEntity.setImports(imports);
         freeMarkerWriter.write(mapperEntity);
         return mapperEntity;
