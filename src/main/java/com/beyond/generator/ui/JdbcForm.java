@@ -15,7 +15,7 @@ import static com.beyond.generator.utils.PropertyUtil.*;
  * @author chenshipeng
  * @date 2021/02/22
  */
-public class GenerateForm extends DialogWrapper {
+public class JdbcForm extends DialogWrapper {
 
 
     private Form form = new Form();
@@ -30,7 +30,7 @@ public class GenerateForm extends DialogWrapper {
 
     private JButton testButton;
 
-    public GenerateForm(@Nullable Project project) {
+    public JdbcForm(@Nullable Project project) {
         super(project);
         this.project = project;
         init();
@@ -43,17 +43,7 @@ public class GenerateForm extends DialogWrapper {
         return form.addItem(new InputItem("jdbcUrl", "jdbcUrl: ", getProperty("jdbcUrl", project)))
                 .addItem(new InputItem("username", "username: ", getUserName(project)))
                 .addItem(new PassItem("password", "password: ", getPassword(project)))
-                .addItem(new InputItem("schema", "schema: ", getProperty("schema", project)))
-                .addItem(new InputItem("tables", "tables: ", getProperty("tables", project)))
-                .addItem(new InputItem("package", "package: ", getProperty("package", project)))
-                .addItem(new InputItem("mapperPackage", "mapperPackage: ", getProperty("mapperPackage", project)))
-                .addItem(new InputItem("mapperXmlPathInResource", "mapperXmlPathInResource: ", getProperty("mapperXmlPathInResource", project)))
-                .addItem(new InputItem("tableExcludePrefix", "tableExcludePrefix: ", getProperty("tableExcludePrefix", project)))
-                .addItem(new InputItem("tablePrefix", "tablePrefix: ", getProperty("tablePrefix", project)))
-                .addItem(new InputItem("mapperSuffix", "mapperSuffix: ", getProperty("mapperSuffix", project)))
-                .addItem(new InputItem("mapperXmlSuffix", "mapperXmlSuffix: ", getProperty("mapperXmlSuffix", project)))
-                .addItem(new InputItem("forMyBatisPlus", "forMyBatisPlus: ", getProperty("forMyBatisPlus", project)))
-                .buildPanel(13, 2);
+                .buildPanel(3, 2);
     }
 
 
@@ -87,7 +77,7 @@ public class GenerateForm extends DialogWrapper {
         return south;
     }
 
-    public void show(Callback<GenerateForm> submitCallback, Callback<GenerateForm> testCallback) {
+    public void show(Callback<JdbcForm> submitCallback, Callback<JdbcForm> testCallback) {
         submitRunnable.setCallback(submitCallback);
         testRunnable.setCallback(testCallback);
         show();
@@ -109,21 +99,21 @@ public class GenerateForm extends DialogWrapper {
 
     private class SubmitRunnable implements Runnable {
 
-        private Callback<GenerateForm> callback;
+        private Callback<JdbcForm> callback;
 
         @Override
         public void run() {
             saveFormProperties();
             if (callback != null) {
-                callback.run(GenerateForm.this);
+                callback.run(JdbcForm.this);
             }
         }
 
-        public Callback<GenerateForm> getCallback() {
+        public Callback<JdbcForm> getCallback() {
             return callback;
         }
 
-        public void setCallback(Callback<GenerateForm> callback) {
+        public void setCallback(Callback<JdbcForm> callback) {
             this.callback = callback;
         }
     }
@@ -143,16 +133,6 @@ public class GenerateForm extends DialogWrapper {
 
     private void saveFormProperties() {
         saveProperty("jdbcUrl", getData().get("jdbcUrl"), true, project);
-        saveProperty("schema", getData().get("schema"), true, project);
-        saveProperty("tables", getData().get("tables"), true, project);
-        saveProperty("package", getData().get("package"), true, project);
-        saveProperty("mapperPackage", getData().get("mapperPackage"), true, project);
-        saveProperty("mapperXmlPathInResource", getData().get("mapperXmlPathInResource"), true, project);
-        saveProperty("tableExcludePrefix", getData().get("tableExcludePrefix"), true, project);
-        saveProperty("tablePrefix", getData().get("tablePrefix"), true, project);
-        saveProperty("mapperSuffix", getData().get("mapperSuffix"), true, project);
-        saveProperty("mapperXmlSuffix", getData().get("mapperXmlSuffix"), true, project);
-        saveProperty("forMyBatisPlus", getData().get("forMyBatisPlus"), true, project);
         saveUserNameAndPassword(getData().get("username"), getData().get("password"), true, project);
     }
 
@@ -160,21 +140,21 @@ public class GenerateForm extends DialogWrapper {
 
     private class TestRunnable implements Runnable {
 
-        private Callback<GenerateForm> callback;
+        private Callback<JdbcForm> callback;
 
         @Override
         public void run() {
             saveFormProperties();
             if (callback != null) {
-                callback.run(GenerateForm.this);
+                callback.run(JdbcForm.this);
             }
         }
 
-        public Callback<GenerateForm> getCallback() {
+        public Callback<JdbcForm> getCallback() {
             return callback;
         }
 
-        public void setCallback(Callback<GenerateForm> callback) {
+        public void setCallback(Callback<JdbcForm> callback) {
             this.callback = callback;
         }
     }

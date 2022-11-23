@@ -6,6 +6,7 @@ import com.beyond.gen.freemarker.MapperEntity;
 import com.beyond.gen.freemarker.MapperXmlEntity;
 import com.beyond.generator.ui.GenerateForm;
 import com.beyond.generator.ui.MsgDialog;
+import com.beyond.generator.utils.MapperUtil;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
@@ -216,11 +217,12 @@ public class GenerateAction extends AnAction {
         mapperEntity.setMapperName(javaEntity.getClassName() + mapperSuffix);
         mapperEntity.setPackageName(mapperPackage);
         mapperEntity.setTableFullName(schema + "." + table);
-        mapperEntity.setEntityName(javaEntity.getClassName());
+        mapperEntity.setEntityName(javaEntity.getPackageName()+"."+javaEntity.getClassName());
         List<String> imports = new ArrayList<String>();
 //        if (!javaEntity.getPackageName().equals(mapperPackage)){
 //            imports.add(javaEntity.getPackageName()+"."+javaEntity.getClassName());
 //        }
+//        imports.add("java.util.List");
 
         if (forMyBatisPlus){
             mapperEntity.setSuperMapperName("BaseMapper<"+javaEntity.getClassName()+">");
@@ -254,29 +256,7 @@ public class GenerateAction extends AnAction {
         FreeMarkerWriter freeMarkerWriter =
                 new FreeMarkerWriter("", "mapperxml.ftl", targetDir, javaEntity.getClassName() + mapperXmlSuffix + ".xml");
 
-        MapperXmlEntity mapperXmlEntity = new MapperXmlEntity();
-        mapperXmlEntity.setEntityClassFullName(javaEntity.getPackageName() + "." + javaEntity.getClassName());
-        mapperXmlEntity.setMapperClassFullName(mapperEntity.getPackageName() + "." + mapperEntity.getMapperName());
-        for (Column column : columns) {
-            String columnKey = column.getColumnKey();
-            if (org.apache.commons.lang3.StringUtils.equalsIgnoreCase("PRI", columnKey)) {
-                mapperXmlEntity.setIdColumnName(column.getColumnName());
-                mapperXmlEntity.setIdPropertyName(StringUtils.lineToHump(column.getColumnName()));
-                mapperXmlEntity.setIdJdbcType(TypeConverter.toCommonJdbcType(column.getDataType()).toUpperCase());
-                break;
-            }
-        }
-        ;
-        for (Column column : columns) {
-            String columnKey = column.getColumnKey();
-            if (!org.apache.commons.lang3.StringUtils.equalsIgnoreCase("PRI", columnKey)) {
-                MapperXmlEntity.ColumnEntity columnEntity = new MapperXmlEntity.ColumnEntity();
-                columnEntity.setColumnName(column.getColumnName());
-                columnEntity.setPropertyName(StringUtils.lineToHump(column.getColumnName()));
-                columnEntity.setJdbcType(TypeConverter.toCommonJdbcType(column.getDataType()).toUpperCase());
-                mapperXmlEntity.getNormalColumns().add(columnEntity);
-            }
-        }
+        MapperXmlEntity mapperXmlEntity = MapperUtil.createMapperXmlEntity(javaEntity, mapperEntity, columns);
 
         freeMarkerWriter.write(mapperXmlEntity);
     }
