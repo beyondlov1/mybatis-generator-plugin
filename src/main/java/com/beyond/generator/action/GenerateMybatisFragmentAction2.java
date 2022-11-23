@@ -1,10 +1,7 @@
 package com.beyond.generator.action;
 
 import com.beyond.gen.freemarker.FragmentGenUtils;
-import com.beyond.gen.freemarker.JavaEntity;
-import com.beyond.gen.freemarker.MapperEntity;
 import com.beyond.generator.Column;
-import com.beyond.generator.ui.Callback;
 import com.beyond.generator.ui.JdbcForm;
 import com.beyond.generator.ui.MsgDialog;
 import com.beyond.generator.utils.MapperUtil;
@@ -26,10 +23,6 @@ import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiImportList;
-import com.intellij.psi.PsiImportStatement;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiPackageStatement;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.javadoc.PsiDocComment;
@@ -96,16 +89,24 @@ public class GenerateMybatisFragmentAction2 extends PsiElementBaseIntentionActio
 
     private void gen2(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass containingClass) {
         PsiDocComment docComment = containingClass.getDocComment();
-        genMapperXmlResultMapAndColunmList(project, psiDocumentManager, containingClass, docComment);
+        final boolean isContinue = genMapperXmlResultMapAndColumnList(project, psiDocumentManager, containingClass, docComment);
+        if (isContinue){
+            MsgDialog msgDialog = new MsgDialog(project, "Success!");
+            msgDialog.show();
+        }
     }
 
     private void gen(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass containingClass) {
         PsiDocComment docComment = containingClass.getDocComment();
-        genMapperXmlResultMapAndColunmList(project, psiDocumentManager, containingClass, docComment);
+        final boolean isContinue = genMapperXmlResultMapAndColumnList(project, psiDocumentManager, containingClass, docComment);
+        if (isContinue){
+            MsgDialog msgDialog = new MsgDialog(project, "Success!");
+            msgDialog.show();
+        }
     }
 
 
-    private void genMapperXmlResultMapAndColunmList(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment) {
+    private boolean genMapperXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment) {
 
         String qualifiedName = mapperClass.getQualifiedName();
         VirtualFile mapperXmlFile = findMapperXmlByName(qualifiedName, ProjectUtil.guessProjectDir(project));
@@ -158,21 +159,15 @@ public class GenerateMybatisFragmentAction2 extends PsiElementBaseIntentionActio
                     }
                 }
 
-                if (columnListElement != null && resultMapElement != null) return;
+                if (columnListElement != null && resultMapElement != null) return true;
 
 
-                // todo 查询
                 String jdbcUrl = getProperty("jdbcUrl", project);
                 String username = getUserName(project);
                 String password = getPassword(project);
 
                 if (StringUtils.isBlank(jdbcUrl) || StringUtils.isBlank(username) || StringUtils.isBlank(password)) {
-                    // todo show form
                     JdbcForm jdbcForm = new JdbcForm(project);
-                    String finalTableFullName = tableFullName;
-                    String finalEntityFullName = entityFullName;
-                    Element finalColumnListElement = columnListElement;
-                    Element finalResultMapElement = resultMapElement;
                     jdbcForm.show(form -> {
                         try {
                             String jdbcUrl1 = StringUtils.trimToNull(form.getData().get("jdbcUrl"));
@@ -188,19 +183,13 @@ public class GenerateMybatisFragmentAction2 extends PsiElementBaseIntentionActio
                             String sql = "select 1";
                             String result = jdbcTemplate.queryForObject(sql, String.class);
 
-                            if ("1".equals(result)) {
-                                MsgDialog msgDialog = new MsgDialog(project, "success");
-                                msgDialog.show();
-                            } else {
+                            if (!"1".equals(result)) {
                                 MsgDialog msgDialog = new MsgDialog(project, "fail");
                                 msgDialog.show();
                                 return;
                             }
 
-                            doCreateXmlResultMapAndColumnList(project, psiDocumentManager, finalTableFullName, finalEntityFullName, xmldoc, finalColumnListElement, finalResultMapElement);
-                            MsgDialog msgDialog = new MsgDialog(project, "Success!");
-                            msgDialog.show();
-
+                            form.setOk(true);
                             form.close(OK_EXIT_CODE);
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -223,36 +212,40 @@ public class GenerateMybatisFragmentAction2 extends PsiElementBaseIntentionActio
                             String sql = "select 1";
                             String result = jdbcTemplate.queryForObject(sql, String.class);
 
-                            if ("1".equals(result)) {
-                                MsgDialog msgDialog = new MsgDialog(project, "success");
-                                msgDialog.show();
-                            } else {
+                            if (!"1".equals(result)) {
                                 MsgDialog msgDialog = new MsgDialog(project, "fail");
                                 msgDialog.show();
                             }
+                            form.setOk(false);
+
                         } catch (Exception e) {
                             e.printStackTrace();
                             MsgDialog msgDialog = new MsgDialog(project, e.getMessage());
                             msgDialog.show();
                         }
                     });
+                    if (jdbcForm.isOk()){
+                        jdbcUrl = getProperty("jdbcUrl", project);
+                        username = getUserName(project);
+                        password = getPassword(project);
+                        doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, columnListElement, resultMapElement, jdbcUrl, username, password);
+                    }
+                    if (jdbcForm.isOk()) return true;
                 }else {
-                    doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, columnListElement, resultMapElement);
-                    MsgDialog msgDialog = new MsgDialog(project, "Success!");
-                    msgDialog.show();
+                    doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, columnListElement, resultMapElement, jdbcUrl, username, password);
+                    return true;
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
             MsgDialog msgDialog = new MsgDialog(project, e.getMessage());
             msgDialog.show();
+            return false;
         }
+        return true;
     }
 
-    private void doCreateXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, String tableFullName, String entityFullName, Document xmldoc, Element columnListElement, Element resultMapElement) {
-        String jdbcUrl = getProperty("jdbcUrl", project);
-        String username = getUserName(project);
-        String password = getPassword(project);
+    private void doCreateXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, String tableFullName, String entityFullName, Document xmldoc, Element columnListElement, Element resultMapElement, String jdbcUrl, String username, String password) {
 
         MysqlDataSource dataSource = new MysqlDataSource();
         dataSource.setUrl(jdbcUrl);
@@ -308,7 +301,6 @@ public class GenerateMybatisFragmentAction2 extends PsiElementBaseIntentionActio
     }
 
     private static Map<String, VirtualFile> mapper2xmlMap = new HashMap<>();
-
     private static VirtualFile findMapperXmlByName(String mapperFullName, VirtualFile root) {
         VirtualFile xmlPath = mapper2xmlMap.get(mapperFullName);
         if (xmlPath != null) {
@@ -318,26 +310,30 @@ public class GenerateMybatisFragmentAction2 extends PsiElementBaseIntentionActio
                 mapper2xmlMap.remove(mapperFullName);
             }
         }
+
         VirtualFile projectDir = root;
         if (root != null){
             root = root.findFileByRelativePath("src/main");
         }
         if (root == null) root = projectDir;
+
         final VirtualFile[] found = {null};
+        FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
         VfsUtilCore.visitChildrenRecursively(root, new VirtualFileVisitor<Object>() {
             @Override
             public boolean visitFile(@NotNull VirtualFile file) {
                 if (file.isDirectory()) return super.visitFile(file);
+                if (found[0] != null) return false;
                 String extension = file.getExtension();
                 if (StringUtils.equals(extension, "xml")) {
-                    Document xmldoc = FileDocumentManager.getInstance().getDocument(file);
+                    Document xmldoc = fileDocumentManager.getDocument(file);
                     if (xmldoc != null) {
-                        try {
+                        final String text = xmldoc.getText();
+                        if (!text.contains(mapperFullName)) return false;
+                        try (StringReader stringReader = new StringReader(text)){
                             SAXBuilder sb = new SAXBuilder();
-                            org.jdom.Document doc = sb.build(new StringReader(xmldoc.getText()));
-                            Element root = doc.getRootElement();
-                            Attribute namespaceText = (Attribute) XPath.selectSingleNode(root, "//mapper/@namespace");
-
+                            org.jdom.Document doc = sb.build(stringReader);
+                            Attribute namespaceText = (Attribute) XPath.selectSingleNode(doc.getRootElement(), "//mapper/@namespace");
                             if (namespaceText != null) {
                                 String namespace = namespaceText.getValue();
                                 if (StringUtils.equals(namespace, mapperFullName)) {
@@ -358,6 +354,7 @@ public class GenerateMybatisFragmentAction2 extends PsiElementBaseIntentionActio
         }
         return found[0];
     }
+
 
     private String getPrevWord(Document document, Editor editor) {
         int selectionEnd = editor.getSelectionModel().getSelectionEnd();

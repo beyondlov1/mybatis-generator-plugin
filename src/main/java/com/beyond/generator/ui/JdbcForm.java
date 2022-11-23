@@ -30,6 +30,8 @@ public class JdbcForm extends DialogWrapper {
 
     private JButton testButton;
 
+    private boolean ok;
+
     public JdbcForm(@Nullable Project project) {
         super(project);
         this.project = project;
@@ -160,4 +162,11 @@ public class JdbcForm extends DialogWrapper {
     }
 
 
+    public boolean isOk() {
+        return ok;
+    }
+
+    public void setOk(boolean ok) {
+        this.ok = ok;
+    }
 }

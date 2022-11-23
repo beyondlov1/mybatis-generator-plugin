@@ -2,6 +2,7 @@ package com.beyond.generator.action;
 
 import com.beyond.gen.freemarker.FragmentGenUtils;
 import com.beyond.generator.Column;
+import com.beyond.generator.ui.JdbcForm;
 import com.beyond.generator.ui.MsgDialog;
 import com.beyond.generator.utils.MapperUtil;
 import com.beyond.generator.utils.PsiDocumentUtils;
@@ -48,6 +49,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +57,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static com.beyond.generator.utils.PropertyUtil.*;
+import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
 
 /**
  * @author chenshipeng
@@ -118,23 +121,27 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
             entityName = StringUtils.substringAfterLast(entityName, ".");
         }
 
-        boolean isContinue = genMapperFragment2(project, psiDocumentManager, document, containingClass, methodName, start, entityName, fullEntityName);
-
-        if (isContinue){
-            genMapperXmlFragment(project, psiDocumentManager, containingClass, docComment, methodName);
-        }
-    }
-
-    private boolean genMapperFragment2(Project project, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName, int start, String entityName, String fullEntityName) {
 
         @NotNull PsiMethod[] allMethods = containingClass.getAllMethods();
         for (PsiMethod allMethod : allMethods) {
             if (StringUtils.equals(allMethod.getName(), methodName)){
                 MsgDialog msgDialog = new MsgDialog(project, "method exists.");
                 msgDialog.show();
-                return false;
+                return;
             }
         }
+
+        boolean isContinue = genMapperXmlFragment(project, psiDocumentManager, containingClass, docComment, methodName);
+        if (isContinue){
+            isContinue = genMapperFragment2(project, psiDocumentManager, document, containingClass, methodName, start, entityName, fullEntityName);
+            if (isContinue){
+                MsgDialog msgDialog = new MsgDialog(project, "Success!");
+                msgDialog.show();
+            }
+        }
+    }
+
+    private boolean genMapperFragment2(Project project, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName, int start, String entityName, String fullEntityName) {
 
         String paramFragment = FragmentGenUtils.createParamFragment(methodName);
         boolean needList = false;
@@ -176,22 +183,28 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
             entityName = StringUtils.substringAfterLast(entityName, ".");
         }
 
-        boolean isContinue = genMapperFragment1(project, editor, psiDocumentManager, document, containingClass, methodName, entityName, fullEntityName);
-        if (isContinue){
-            genMapperXmlFragment(project, psiDocumentManager, containingClass, docComment, methodName);
-        }
-
-    }
-
-    private boolean genMapperFragment1(Project project, Editor editor, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName, String entityName, String fullEntityName) {
         @NotNull PsiMethod[] allMethods = containingClass.getAllMethods();
         for (PsiMethod allMethod : allMethods) {
             if (StringUtils.equals(allMethod.getName(), methodName)){
                 MsgDialog msgDialog = new MsgDialog(project, "method exists.");
                 msgDialog.show();
-                return false;
+                return;
             }
         }
+
+        boolean isContinue = genMapperXmlFragment(project, psiDocumentManager, containingClass, docComment, methodName);
+        if (isContinue){
+            isContinue = genMapperFragment1(project, editor, psiDocumentManager, document, containingClass, methodName, entityName, fullEntityName);
+            if (isContinue){
+                MsgDialog msgDialog = new MsgDialog(project, "Success!");
+                msgDialog.show();
+            }
+        }
+
+    }
+
+    private boolean genMapperFragment1(Project project, Editor editor, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName, String entityName, String fullEntityName) {
+
         String paramFragment = FragmentGenUtils.createParamFragment(methodName);
         int start = editor.getSelectionModel().getSelectionEnd() - methodName.length();
 
@@ -248,7 +261,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         }
     }
 
-    private void genMapperXmlFragment(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment, String methodName) {
+    private boolean genMapperXmlFragment(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment, String methodName) {
 
         String qualifiedName = mapperClass.getQualifiedName();
         VirtualFile mapperXmlFile = findMapperXmlByName(qualifiedName, ProjectUtil.guessProjectDir(project));
@@ -275,7 +288,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         if (tableName == null) {
             MsgDialog msgDialog = new MsgDialog(project, "please add '/** @table schema.table */' in doc comment.");
             msgDialog.show();
-            return;
+            return false;
         }
 
         try {
@@ -287,7 +300,10 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
                 Element root = doc.getRootElement();
 
                 // Base_Column_List and ResultMap
-                doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableName, entityFullName, xmldoc, root);
+                boolean isContinue = createXmlResultMapAndColumnList(project, psiDocumentManager, tableName, entityFullName, xmldoc, root);
+                if (!isContinue){
+                    return false;
+                }
 
                 List<Attribute> idAttrs = (List<Attribute>) XPath.selectNodes(root, "//mapper/select/@id");
 
@@ -315,17 +331,93 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
                     PsiDocumentUtils.commitAndSaveDocument(psiDocumentManager, xmldoc);
                 }
             }
-            MsgDialog msgDialog = new MsgDialog(project, "Success!");
-            msgDialog.show();
         } catch (Exception e) {
             e.printStackTrace();
             MsgDialog msgDialog = new MsgDialog(project, e.getMessage());
             msgDialog.show();
+            return false;
         }
+        return true;
+    }
+
+    private boolean createXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, String tableFullName, String entityFullName, Document xmldoc, Element root) throws JDOMException {
+        String jdbcUrl = getProperty("jdbcUrl", project);
+        String username = getUserName(project);
+        String password = getPassword(project);
+        if (StringUtils.isBlank(jdbcUrl) || StringUtils.isBlank(username) || StringUtils.isBlank(password)) {
+            JdbcForm jdbcForm = new JdbcForm(project);
+            jdbcForm.show(form -> {
+                try {
+                    String jdbcUrl1 = StringUtils.trimToNull(form.getData().get("jdbcUrl"));
+                    String username1 = StringUtils.trimToNull(form.getData().get("username"));
+                    String password1 = StringUtils.trimToNull(form.getData().get("password"));
+                    MysqlDataSource dataSource = new MysqlDataSource();
+                    dataSource.setUrl(jdbcUrl1);
+                    dataSource.setUser(username1);
+                    dataSource.setPassword(password1);
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                    jdbcTemplate.setDataSource(dataSource);
+
+                    String sql = "select 1";
+                    String result = jdbcTemplate.queryForObject(sql, String.class);
+
+                    if (!"1".equals(result)) {
+                        MsgDialog msgDialog = new MsgDialog(project, "fail");
+                        msgDialog.show();
+                        return;
+                    }
+
+                    form.setOk(true);
+                    form.close(OK_EXIT_CODE);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    MsgDialog msgDialog = new MsgDialog(project, e.getMessage());
+                    msgDialog.show();
+                }
+            }, form -> {
+                try {
+                    String jdbcUrl12 = form.getData().get("jdbcUrl").trim();
+                    String username12 = form.getData().get("username").trim();
+                    String password12 = form.getData().get("password").trim();
+
+                    MysqlDataSource dataSource = new MysqlDataSource();
+                    dataSource.setUrl(jdbcUrl12);
+                    dataSource.setUser(username12);
+                    dataSource.setPassword(password12);
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                    jdbcTemplate.setDataSource(dataSource);
+
+                    String sql = "select 1";
+                    String result = jdbcTemplate.queryForObject(sql, String.class);
+
+                    if (!"1".equals(result)) {
+                        MsgDialog msgDialog = new MsgDialog(project, "fail");
+                        msgDialog.show();
+                    }
+
+                    form.setOk(false);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    MsgDialog msgDialog = new MsgDialog(project, e.getMessage());
+                    msgDialog.show();
+                }
+            });
+            if (jdbcForm.isOk()){
+                jdbcUrl = getProperty("jdbcUrl", project);
+                username = getUserName(project);
+                password = getPassword(project);
+                doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, root, jdbcUrl, username, password);
+            }
+            return jdbcForm.isOk();
+        }else{
+            doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, root, jdbcUrl, username, password);
+        }
+        return true;
     }
 
 
-    private void doCreateXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, String tableFullName, String entityFullName, Document xmldoc, Element root) throws JDOMException {
+    private void doCreateXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, String tableFullName, String entityFullName, Document xmldoc, Element root, String jdbcUrl,String username, String password) throws JDOMException {
 
         List<Element> columnListElements = (List<Element>) XPath.selectNodes(root, "//mapper/sql");
         Element columnListElement = null;
@@ -347,10 +439,6 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         }
 
         if (columnListElement != null && resultMapElement != null) return;
-
-        String jdbcUrl = getProperty("jdbcUrl", project);
-        String username = getUserName(project);
-        String password = getPassword(project);
 
         MysqlDataSource dataSource = new MysqlDataSource();
         dataSource.setUrl(jdbcUrl);
@@ -425,20 +513,22 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         if (root == null) root = projectDir;
 
         final VirtualFile[] found = {null};
+        FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
         VfsUtilCore.visitChildrenRecursively(root, new VirtualFileVisitor<Object>() {
             @Override
             public boolean visitFile(@NotNull VirtualFile file) {
                 if (file.isDirectory()) return super.visitFile(file);
+                if (found[0] != null) return false;
                 String extension = file.getExtension();
                 if (StringUtils.equals(extension, "xml")) {
-                    Document xmldoc = FileDocumentManager.getInstance().getDocument(file);
+                    Document xmldoc = fileDocumentManager.getDocument(file);
                     if (xmldoc != null) {
-                        try {
+                        final String text = xmldoc.getText();
+                        if (!text.contains(mapperFullName)) return false;
+                        try (StringReader stringReader = new StringReader(text)){
                             SAXBuilder sb = new SAXBuilder();
-                            org.jdom.Document doc = sb.build(new StringReader(xmldoc.getText()));
-                            Element root = doc.getRootElement();
-                            Attribute namespaceText = (Attribute) XPath.selectSingleNode(root, "//mapper/@namespace");
-
+                            org.jdom.Document doc = sb.build(stringReader);
+                            Attribute namespaceText = (Attribute) XPath.selectSingleNode(doc.getRootElement(), "//mapper/@namespace");
                             if (namespaceText != null) {
                                 String namespace = namespaceText.getValue();
                                 if (StringUtils.equals(namespace, mapperFullName)) {

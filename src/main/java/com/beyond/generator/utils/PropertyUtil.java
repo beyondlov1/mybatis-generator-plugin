@@ -70,11 +70,11 @@ public class PropertyUtil {
     public static void saveProperty(String key, String value, boolean global, Project project) {
         if (global) {
             PropertiesComponent globalProperties = PropertiesComponent.getInstance();
-            globalProperties.setValue(key, value);
+            globalProperties.setValue(key, StringUtils.trim(value));
             return;
         }
         PropertiesComponent properties = PropertiesComponent.getInstance(project);
-        properties.setValue(key, value);
+        properties.setValue(key, StringUtils.trim(value));
     }
 
     @SuppressWarnings("MissingRecentApi")
