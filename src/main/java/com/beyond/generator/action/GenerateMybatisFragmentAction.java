@@ -74,10 +74,14 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         PsiClass containingClass = PsiElementUtil.getContainingClass(element);
 
         if (isMapperClass(containingClass)) {
-            String methodName = getPrevWord(document, editor);
-            if (StringUtils.isBlank(methodName)) return;
-
-            gen(project, editor, psiDocumentManager, document, containingClass, methodName);
+            try {
+                String methodName = getPrevWord(document, editor);
+                if (StringUtils.isBlank(methodName)) return;
+                gen(project, editor, psiDocumentManager, document, containingClass, methodName);
+            } catch (JDOMException | IOException e) {
+                e.printStackTrace();
+                msg(project, e.getMessage());
+            }
         } else {
             PsiClass psiClass;
             try {
@@ -92,11 +96,12 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+                msg(project, e.getMessage());
             }
         }
     }
 
-    private void gen2(@NotNull Project project, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName, int start) {
+    private void gen2(@NotNull Project project, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName, int start) throws JDOMException, IOException {
         String entityName = null;
         PsiDocComment docComment = containingClass.getDocComment();
         if (docComment != null) {
@@ -109,8 +114,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
             }
         }
         if (entityName == null) {
-            msg(project, "please add '/** @entity entityName */' in doc comment.");
-            return;
+            throw new RuntimeException( "please add '/** @entity entityName */' in doc comment.");
         }
 
         String fullEntityName = null;
@@ -123,8 +127,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         @NotNull PsiMethod[] allMethods = containingClass.getAllMethods();
         for (PsiMethod allMethod : allMethods) {
             if (StringUtils.equals(allMethod.getName(), methodName)){
-                msg(project, "method exists.");
-                return;
+                throw new RuntimeException( "method exists.");
             }
         }
 
@@ -155,7 +158,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         return true;
     }
 
-    private void gen(@NotNull Project project, Editor editor, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName) {
+    private void gen(@NotNull Project project, Editor editor, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName) throws JDOMException, IOException {
         String entityName = null;
         PsiDocComment docComment = containingClass.getDocComment();
         if (docComment != null) {
@@ -168,8 +171,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
             }
         }
         if (entityName == null) {
-            msg(project, "please add '/** @entity entityName */' in doc comment.");
-            return;
+            throw new RuntimeException( "please add '/** @entity entityName */' in doc comment.");
         }
 
         String fullEntityName = null;
@@ -181,8 +183,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         @NotNull PsiMethod[] allMethods = containingClass.getAllMethods();
         for (PsiMethod allMethod : allMethods) {
             if (StringUtils.equals(allMethod.getName(), methodName)){
-                msg(project, "method exists.");
-                return;
+                throw new RuntimeException( "method exists.");
             }
         }
 
@@ -254,7 +255,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         }
     }
 
-    private boolean genMapperXmlFragment(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment, String methodName) {
+    private boolean genMapperXmlFragment(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment, String methodName) throws JDOMException, IOException {
 
         String qualifiedName = mapperClass.getQualifiedName();
         VirtualFile mapperXmlFile = findMapperXmlByName(qualifiedName, ProjectUtil.guessProjectDir(project));
@@ -279,39 +280,32 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
             }
         }
         if (tableName == null) {
-            msg(project, "please add '/** @table schema.table */' in doc comment.");
-            return false;
+            throw new RuntimeException( "please add '/** @table schema.table */' in doc comment.");
         }
 
-        try {
-            Document xmldoc = FileDocumentManager.getInstance().getDocument(mapperXmlFile);
-            if (xmldoc != null) {
-                SAXBuilder sb = new SAXBuilder();
-                StringReader xmlStringReader = new StringReader(xmldoc.getText());
-                org.jdom.Document doc = sb.build(xmlStringReader);
-                Element root = doc.getRootElement();
+        Document xmldoc = FileDocumentManager.getInstance().getDocument(mapperXmlFile);
+        if (xmldoc != null) {
+            SAXBuilder sb = new SAXBuilder();
+            StringReader xmlStringReader = new StringReader(xmldoc.getText());
+            org.jdom.Document doc = sb.build(xmlStringReader);
+            Element root = doc.getRootElement();
 
-                // Base_Column_List and ResultMap
-                boolean isContinue = createXmlResultMapAndColumnList(project, psiDocumentManager, tableName, entityFullName, xmldoc, root);
-                if (!isContinue){
-                    return false;
-                }
-
-                Element select = getElementByNameAndAttr(root, "//mapper/select", "id",  methodName);
-
-                if (select == null) {
-                    int insertPos = xmldoc.getText().indexOf("</mapper>");
-                    String sql = "\n" + FragmentGenUtils.createXmlFragment(methodName, tableName) + "\n";
-                    xmldoc.insertString(insertPos, sql);
-                    PsiDocumentUtils.commitAndSaveDocument(psiDocumentManager, xmldoc);
-                } else {
-                    // todo replace
-                }
+            // Base_Column_List and ResultMap
+            boolean isContinue = createXmlResultMapAndColumnList(project, psiDocumentManager, tableName, entityFullName, xmldoc, root);
+            if (!isContinue){
+                return false;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            msg(project, e.getMessage());
-            return false;
+
+            Element select = getElementByNameAndAttr(root, "//mapper/select", "id",  methodName);
+
+            if (select == null) {
+                int insertPos = xmldoc.getText().indexOf("</mapper>");
+                String sql = "\n" + FragmentGenUtils.createXmlFragment(methodName, tableName) + "\n";
+                xmldoc.insertString(insertPos, sql);
+                PsiDocumentUtils.commitAndSaveDocument(psiDocumentManager, xmldoc);
+            } else {
+                // todo replace
+            }
         }
         return true;
     }
@@ -329,8 +323,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
                     String password1 = StringUtils.trimToNull(form.getData().get("password"));
                     boolean pass = testConnection(jdbcUrl1, username1, password1);
                     if (!pass) {
-                        msg(project, "fail");
-                        return;
+                        throw new RuntimeException( "fail");
                     }
 
                     form.setOk(true);
@@ -347,7 +340,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
 
                     boolean pass = testConnection(jdbcUrl12, username12, password12);
                     if (!pass) {
-                        msg(project, "fail");
+                        throw new RuntimeException( "fail");
                     }
 
                     form.setOk(false);
@@ -386,8 +379,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         jdbcTemplate.setDataSource(dataSource);
 
         if (tableFullName == null || !tableFullName.contains(".")) {
-            msg(project, "please add '/** @table schema.table */' in doc comment.");
-            return;
+            throw new RuntimeException( "please add '/** @table schema.table */' in doc comment.");
         }
 
         String[] split = tableFullName.split("\\.");
@@ -413,8 +405,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
 
         if (resultMapElement == null) {
             if (entityFullName == null || !entityFullName.contains(".")) {
-                msg(project, "please add '/** @entity entityFullName */' in doc comment.");
-                return;
+                throw new RuntimeException( "please add '/** @entity entityFullName */' in doc comment.");
             }
 
             String[] lines = xmldoc.getText().split("\n");
