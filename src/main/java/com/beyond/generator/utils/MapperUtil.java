@@ -16,7 +16,14 @@ import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.impl.PsiJavaParserFacadeImpl;
+import com.intellij.psi.javadoc.PsiDocComment;
+import com.intellij.psi.javadoc.PsiDocTag;
+import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.search.PsiShortNamesCache;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import org.apache.commons.lang.ArrayUtils;
 import org.jdom.Attribute;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -182,5 +189,25 @@ public class MapperUtil {
 
     public static boolean isMapperClass(PsiClass psiClass) {
         return psiClass != null && psiClass.isInterface() && psiClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null;
+    }
+
+
+    public static String completeFullEntityName(@NotNull Project project, PsiDocumentManager psiDocumentManager, String entityName, PsiDocComment docComment) {
+        if (!entityName.contains(".")) {
+            @NotNull PsiClass[] entityClasses = PsiShortNamesCache.getInstance(project).getClassesByName(entityName, GlobalSearchScope.allScope(project));
+            if (!ArrayUtils.isEmpty(entityClasses)) {
+                PsiClass entityClass = entityClasses[0];
+                Document document = psiDocumentManager.getDocument(docComment.getContainingFile());
+                PsiDocumentUtils.commitAndSaveDocument(PsiDocumentManager.getInstance(project), document);
+                PsiDocTag entity = docComment.findTagByName("entity");
+                if (entity != null) entity.delete();
+                PsiJavaParserFacadeImpl psiJavaParserFacade = new PsiJavaParserFacadeImpl(project);
+                PsiDocTag docTag = psiJavaParserFacade.createDocTagFromText("@entity " + entityClass.getQualifiedName());
+                docComment.add(docTag);
+                PsiDocumentUtils.commitAndSaveDocument(PsiDocumentManager.getInstance(project), document);
+                entityName = entityClass.getQualifiedName();
+            }
+        }
+        return entityName;
     }
 }

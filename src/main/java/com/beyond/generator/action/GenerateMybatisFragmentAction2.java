@@ -21,15 +21,19 @@ import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.impl.PsiJavaParserFacadeImpl;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.javadoc.PsiDocTagValue;
+import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.PatternUtil;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -122,6 +126,7 @@ public class GenerateMybatisFragmentAction2 extends PsiElementBaseIntentionActio
                 PsiDocTagValue valueElement = entityTag.getValueElement();
                 if (valueElement != null) {
                     entityFullName = valueElement.getText();
+                    completeFullEntityName(project, psiDocumentManager, entityFullName, mapperDocComment);
                 }
             }
         }
