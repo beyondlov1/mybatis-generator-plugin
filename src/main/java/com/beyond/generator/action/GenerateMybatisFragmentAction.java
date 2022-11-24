@@ -309,6 +309,12 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
     }
 
     private boolean createXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, String tableFullName, String entityFullName, Document xmldoc, Element root) throws JDOMException {
+
+        Element columnListElement = getElementByNameAndAttr(root, "//mapper/sql", "id", "Base_Column_List");
+        Element resultMapElement = getElementByNameAndAttr(root, "//mapper/resultMap", "id", "BaseResultMap");
+
+        if (columnListElement != null && resultMapElement != null) return true;
+
         String jdbcUrl = getProperty("jdbcUrl", project);
         String username = getUserName(project);
         String password = getPassword(project);
@@ -352,20 +358,17 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
                 jdbcUrl = getProperty("jdbcUrl", project);
                 username = getUserName(project);
                 password = getPassword(project);
-                doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, root, jdbcUrl, username, password);
+                doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc,  resultMapElement, columnListElement, jdbcUrl, username, password);
             }
             return jdbcForm.isOk();
         } else {
-            doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, root, jdbcUrl, username, password);
+            doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, resultMapElement, columnListElement, jdbcUrl, username, password);
         }
         return true;
     }
 
 
-    private void doCreateXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, String tableFullName, String entityFullName, Document xmldoc, Element root, String jdbcUrl, String username, String password) throws JDOMException {
-
-        Element columnListElement = getElementByNameAndAttr(root, "//mapper/sql", "id", "Base_Column_List");
-        Element resultMapElement = getElementByNameAndAttr(root, "//mapper/resultMap", "id", "BaseResultMap");
+    private void doCreateXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, String tableFullName, String entityFullName, Document xmldoc, Element resultMapElement, Element columnListElement, String jdbcUrl, String username, String password) throws JDOMException {
 
         if (columnListElement != null && resultMapElement != null) return;
 
