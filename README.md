@@ -5,6 +5,9 @@
 
 ![mybatis-generator](https://user-images.githubusercontent.com/24317435/203903213-6d0bef03-6da4-46a8-8ec1-4624451aacae.gif)
 
+4. 将实体类中的字段注释转化为swagger的注解 (前提是这个类有 lombok @Data 注解, 实验性功能)
+![mybatis-generator-1](https://user-images.githubusercontent.com/24317435/203993531-48d70bb0-c8c7-45b1-b430-2e2fb86652bd.gif)
+
 
 ### build
 ```
