@@ -31,6 +31,10 @@
     <intentionAction>
       <className>com.beyond.generator.action.GenerateMybatisFragmentAction2</className>
     </intentionAction>
+
+    <intentionAction>
+      <className>com.beyond.generator.action.Comment2SwaggerAnnotationAction</className>
+    </intentionAction>
   </extensions>
 
 
