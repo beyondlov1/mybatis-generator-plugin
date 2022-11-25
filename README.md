@@ -1,5 +1,7 @@
 # mybatis-generator-plugin
-生成mybatis相关文件：entity, mapper, mapperxml
+1. 生成mybatis相关文件：entity, mapper, mapperxml
+2. 从 "getAllByXxxAndXxx/getByXxxAndXxx" 生成方法和xml片段
+3. xxx 以 's' 结尾会生成 in 的sql
 
 ![mybatis-generator](https://user-images.githubusercontent.com/24317435/203903213-6d0bef03-6da4-46a8-8ec1-4624451aacae.gif)
 
