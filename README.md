@@ -1,6 +1,9 @@
 # mybatis-generator-plugin
 生成mybatis相关文件：entity, mapper, mapperxml
 
+![mybatis-generator](https://user-images.githubusercontent.com/24317435/203903213-6d0bef03-6da4-46a8-8ec1-4624451aacae.gif)
+
+
 ### build
 ```
 编译打包依赖 mybatis-generate
