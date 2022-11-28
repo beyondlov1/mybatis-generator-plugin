@@ -1,12 +1,12 @@
 package com.beyond.generator;
 
-import com.beyond.gen.freemarker.FreeMarkerWriter;
 import com.beyond.gen.freemarker.JavaEntity;
 import com.beyond.gen.freemarker.MapperEntity;
 import com.beyond.gen.freemarker.MapperXmlEntity;
 import com.beyond.generator.ui.GenerateForm;
 import com.beyond.generator.ui.MsgDialog;
 import com.beyond.generator.utils.MapperUtil;
+import com.beyond.generator.utils.PsiFileUtil;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
@@ -187,17 +187,14 @@ public class GenerateAction extends AnAction {
         javaEntity.setTableFullName(schema+"."+table);
 
         if (forMyBatisPlus) {
-            FreeMarkerWriter freeMarkerWriter =
-                    new FreeMarkerWriter("", "entity_mybatisplus.ftl", targetDir, javaEntity.getClassName() + ".java");
-            freeMarkerWriter.write(javaEntity.toGen(false));
+            PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir, javaEntity.getClassName()+".java"), javaEntity.toGen(false), "entity_mybatisplus.ftl");
         } else {
-            FreeMarkerWriter freeMarkerWriter =
-                    new FreeMarkerWriter("", "entity.ftl", targetDir, javaEntity.getClassName() + ".java");
-            freeMarkerWriter.write(javaEntity.toGen(false));
+            PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir, javaEntity.getClassName()+".java"), javaEntity.toGen(false), "entity.ftl");
         }
 
         return javaEntity;
     }
+
 
 
     private MapperEntity writeMapper(Project project, JavaEntity javaEntity, String mapperPackage, String mapperSuffix, String schema, String table, boolean forMyBatisPlus) {
@@ -210,8 +207,7 @@ public class GenerateAction extends AnAction {
         }
         String javaPath = PluginUtils.getProjectJavaPath(project);
         String targetDir = PathUtils.concat(javaPath, mapperPackage.split("\\."));
-        FreeMarkerWriter freeMarkerWriter =
-                new FreeMarkerWriter("", "mapper.ftl", targetDir, javaEntity.getClassName() + mapperSuffix + ".java");
+
 
         MapperEntity mapperEntity = new MapperEntity();
         mapperEntity.setMapperName(javaEntity.getClassName() + mapperSuffix);
@@ -234,7 +230,9 @@ public class GenerateAction extends AnAction {
             imports.add("com.baomidou.mybatisplus.core.mapper.BaseMapper");
         }
         mapperEntity.setImports(imports);
-        freeMarkerWriter.write(mapperEntity);
+
+        PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir,javaEntity.getClassName() + mapperSuffix + ".java"), mapperEntity, "mapper.ftl");
+
         return mapperEntity;
     }
 
@@ -253,12 +251,10 @@ public class GenerateAction extends AnAction {
 
         String resources = PathUtils.concat(PluginUtils.getProjectSrcPath(project), "main", "resources");
         String targetDir = PathUtils.concat(resources, mapperXmlPathInResource);
-        FreeMarkerWriter freeMarkerWriter =
-                new FreeMarkerWriter("", "mapperxml.ftl", targetDir, javaEntity.getClassName() + mapperXmlSuffix + ".xml");
-
         MapperXmlEntity mapperXmlEntity = MapperUtil.createMapperXmlEntity(javaEntity, mapperEntity, columns);
 
-        freeMarkerWriter.write(mapperXmlEntity);
+        PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir, javaEntity.getClassName() + mapperXmlSuffix + ".xml"), mapperXmlEntity, "mapperxml.ftl");
+
     }
 
 
