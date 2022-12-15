@@ -35,6 +35,10 @@
     <intentionAction>
       <className>com.beyond.generator.action.Comment2SwaggerAnnotationAction</className>
     </intentionAction>
+
+    <intentionAction>
+      <className>com.beyond.generator.action.EntityGenerateAction</className>
+    </intentionAction>
   </extensions>
 
 

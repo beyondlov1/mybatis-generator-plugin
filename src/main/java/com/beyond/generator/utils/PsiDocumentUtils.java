@@ -17,6 +17,9 @@ package com.beyond.generator.utils;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiJavaParserFacade;
 
 /**
  * Created by bruce.ge on 2016/12/23.
