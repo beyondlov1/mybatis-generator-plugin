@@ -39,7 +39,7 @@ public class EntityForm extends DialogWrapper {
     @Override
     protected @Nullable JComponent createCenterPanel() {
         return form.addItem(new InputItem("packageName", "packageName: ", getProperty("entity.gen.packageName", project)))
-                .buildPanel(1, 2);
+                .buildPanel(2, 2);
     }
 
 

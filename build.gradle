@@ -7,7 +7,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 group 'org.beyond'
-version '1.2'
+version '1.3'
 
 repositories {
     mavenCentral()
@@ -29,6 +29,6 @@ dependencies {
 intellij {
 //    version '2020.2.4'
     updateSinceUntilBuild false
-    localPath = 'C:\\Users\\Administrator\\.gradle\\caches\\modules-2\\files-2.1\\com.jetbrains.intellij.idea\\ideaIC\\2020.2.4\\5685bc139ed2e2c7f1113ac7a9d8f5fc5e3f0334\\ideaIC-2020.2.4'
+    localPath = 'C:\\Users\\Administrator\\Downloads\\ideaIU-2020.2.4.win'
     plugins =['java']
 }
