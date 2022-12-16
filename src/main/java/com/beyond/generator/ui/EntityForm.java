@@ -32,13 +32,13 @@ public class EntityForm extends DialogWrapper {
     public EntityForm(@Nullable Project project) {
         super(project);
         this.project = project;
-        init();
         submitRunnable = new SubmitRunnable();
+        init();
     }
 
     @Override
     protected @Nullable JComponent createCenterPanel() {
-        return form.addItem(new InputItem("packageName", "packageName: ", getProperty("entity.gen.packageName", project)))
+        return form.addItem(new InputItem("packageName", "packageName: ", getProperty("entity.gen.packageName", project), submitRunnable))
                 .buildPanel(2, 2);
     }
 

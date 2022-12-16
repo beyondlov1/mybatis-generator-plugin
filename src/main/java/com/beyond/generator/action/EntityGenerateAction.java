@@ -15,13 +15,20 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiDeclarationStatement;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiImportList;
 import com.intellij.psi.PsiImportStatementBase;
 import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiJavaParserFacade;
 import com.intellij.psi.PsiPackageStatement;
+import com.intellij.psi.PsiStatement;
+import com.intellij.psi.PsiVariable;
+import com.intellij.psi.impl.PsiJavaParserFacadeImpl;
+import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.IncorrectOperationException;
@@ -48,16 +55,22 @@ public class EntityGenerateAction extends PsiElementBaseIntentionAction {
         PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
         PsiClass containingClass = PsiElementUtil.getContainingClass(element);
 
-        learn(project);
-
         try {
             String expr = element.getPrevSibling().getText();
-            String[] split = trimSplit(expr,">");
+
+            boolean useCache = !expr.contains(">>");
+            String sep = ">>";
+            if (useCache){
+                sep = ">";
+            }
+            String[] split = trimSplit(expr,sep);
             if (split.length == 2){
                 String entityName = split[1];
                 String fieldNamesStr = split[0];
                 String[] fieldNames = trimSplit(fieldNamesStr, ",");
                 if (fieldNames.length >= 1 && StringUtils.isNotBlank(entityName)){
+
+                    learn(project, useCache);
 
                     JavaEntity javaEntity = new JavaEntity();
 
@@ -94,17 +107,37 @@ public class EntityGenerateAction extends PsiElementBaseIntentionAction {
                     }
                     javaEntity.setFields(fieldEntities);
 
+                    for (JavaEntity.FieldEntity fieldEntity : fieldEntities) {
+                        @NotNull PsiClass[] psiClasses = PsiShortNamesCache.getInstance(project).getClassesByName(fieldEntity.getType(), GlobalSearchScope.allScope(project));
+                        PsiClass selectPsiClass = null;
+                        for (PsiClass psiClass : psiClasses) {
+                            if (psiClass.getQualifiedName() != null && psiClass.getQualifiedName().startsWith("java")){
+                                selectPsiClass = psiClass;
+                                break;
+                            }
+                        }
+                        if (selectPsiClass == null && psiClasses.length > 0){
+                            selectPsiClass = psiClasses[0];
+                        }
+
+                        if (selectPsiClass != null){
+                            if (!javaEntity.getImports().contains(selectPsiClass.getQualifiedName())){
+                                javaEntity.getImports().add(selectPsiClass.getQualifiedName());
+                            }
+                        }
+                    }
+
 
                     String javaPath = PluginUtils.getProjectJavaPath(project);
                     String targetDir = PathUtils.concat(javaPath, javaEntity.getPackageName().split("\\."));
-                    PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir, javaEntity.getClassName()+".java"), javaEntity.toGen(false), "entity.ftl");
+                    PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir, javaEntity.getClassName() + ".java"), javaEntity.toGen(false), "entity.ftl");
 
 
                     TextRange textRange = element.getPrevSibling().getTextRange();
                     editor.getDocument().replaceString(textRange.getStartOffset(),textRange.getEndOffset(), String.format("%s %s = new %s();",entityName, StringUtils.uncapitalize(entityName),entityName));
                     PsiDocumentUtils.commitAndSaveDocument(psiDocumentManager,editor.getDocument());
 
-                    addEntityImport(editor.getDocument(), containingClass, packageName + "." + entityName, false);
+                    addEntityImport(editor.getDocument(), containingClass, packageName+"."+entityName, false);
                 }
             }
         } catch (Exception e) {
@@ -114,21 +147,24 @@ public class EntityGenerateAction extends PsiElementBaseIntentionAction {
     }
 
 
-    private void addEntityImport(Document document, PsiClass containingClass, String fullEntityName, boolean needList) {
-        if (containingClass.getContainingFile() instanceof PsiJavaFile) {
-            PsiJavaFile containingFile = (PsiJavaFile) containingClass.getContainingFile();
+
+    private void addEntityImport(Document document, PsiClass containingClass, String fullImportClassName, boolean needList) {
+        addEntityImport(document, containingClass.getContainingFile(), fullImportClassName, needList);
+    }
+
+    private void addEntityImport(Document document, PsiFile psiFile, String fullImportClassName, boolean needList) {
+        if (psiFile instanceof PsiJavaFile) {
+            PsiJavaFile containingFile = (PsiJavaFile) psiFile;
             PsiImportList importList = containingFile.getImportList();
 
             StringBuilder importStr = new StringBuilder();
-            if (fullEntityName != null) {
-                addImportIfNotExist(importList, fullEntityName, importStr);
+            if (fullImportClassName != null) {
+                addImportIfNotExist(importList, fullImportClassName, importStr);
             }
 
             if (needList) {
                 addImportIfNotExist(importList, "java.util.List", importStr);
             }
-
-            addImportIfNotExist(importList, "org.apache.ibatis.annotations.Param", importStr);
 
             PsiPackageStatement packageStatement = containingFile.getPackageStatement();
             if (packageStatement != null && StringUtils.isNotBlank(importStr)) {
@@ -160,10 +196,11 @@ public class EntityGenerateAction extends PsiElementBaseIntentionAction {
 
     private Map<String, Map<String, Integer>> fieldName2TypeMap = new HashMap<>();
 
-    private void learn(Project project){
-        if (!fieldName2TypeMap.isEmpty()){
+    private void learn(Project project, boolean useCache){
+        if (useCache && !fieldName2TypeMap.isEmpty()){
             return;
         }
+        fieldName2TypeMap = new HashMap<>();
         List<PsiClass> allClasses = new ArrayList<>();
         PsiShortNamesCache psiShortNamesCache = PsiShortNamesCache.getInstance(project);
         @NotNull String[] allClassNames = psiShortNamesCache.getAllClassNames();
@@ -198,6 +235,7 @@ public class EntityGenerateAction extends PsiElementBaseIntentionAction {
         for (Map.Entry<String, Integer> entry : type2CountMap.entrySet()) {
             if (entry.getValue() > max){
                 result = entry.getKey();
+                max = entry.getValue();
             }
         }
         return result;
@@ -209,7 +247,12 @@ public class EntityGenerateAction extends PsiElementBaseIntentionAction {
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement element) {
         String expr = element.getPrevSibling().getText();
-        String[] split = expr.split(">");
+        boolean useCache = !expr.contains(">>");
+        String sep = ">>";
+        if (useCache){
+            sep = ">";
+        }
+        String[] split = expr.split(sep);
         if (split.length == 2){
             String entityName = split[1];
             String fieldNamesStr = split[0];
