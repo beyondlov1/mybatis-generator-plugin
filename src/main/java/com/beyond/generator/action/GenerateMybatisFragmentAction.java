@@ -425,11 +425,9 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement element) {
         PsiClass containingClass = PsiElementUtil.getContainingClass(element);
+        if(containingClass == null) return false;
         String methodName = getPrevWord(editor.getDocument(), editor);
-        if (containingClass != null
-                && StringUtils.isNotBlank(methodName)
-                && methodName.startsWith("get")
-                && containingClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null) {
+        if (StringUtils.isNotBlank(methodName) && methodName.startsWith("get") && containingClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null) {
             return true;
         }
 

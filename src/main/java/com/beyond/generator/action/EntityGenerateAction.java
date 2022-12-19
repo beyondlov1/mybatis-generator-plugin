@@ -246,6 +246,9 @@ public class EntityGenerateAction extends PsiElementBaseIntentionAction {
 
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement element) {
+        if(element.getPrevSibling() == null){
+            return false;
+        }
         String expr = element.getPrevSibling().getText();
         boolean useCache = !expr.contains(">>");
         String sep = ">>";

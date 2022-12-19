@@ -255,9 +255,10 @@ public class GenerateMybatisFragmentAction2 extends PsiElementBaseIntentionActio
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement element) {
         PsiClass containingClass = PsiElementUtil.getContainingClass(element);
-        if (containingClass != null
-                && containingClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null
-                && PsiTreeUtil.findFirstParent(element, psiElement -> psiElement instanceof PsiDocComment) != null) {
+
+        if(containingClass == null) return false;
+
+        if (containingClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null && PsiTreeUtil.findFirstParent(element, psiElement -> psiElement instanceof PsiDocComment) != null) {
             return true;
         }
 
