@@ -13,6 +13,7 @@ import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.impl.file.PsiDirectoryFactory;
 import com.intellij.util.ThrowableRunnable;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,6 +25,9 @@ import java.nio.file.Paths;
 public class PsiFileUtil {
     public static void createFile(Project project, String absPath, String content){
 
+        if (new File(absPath).exists()){
+            throw new RuntimeException("file exists: " + absPath);
+        }
         try {
             WriteCommandAction.writeCommandAction(project).run((ThrowableRunnable<Throwable>) () -> {
                 if (project.getBasePath() == null){
@@ -42,7 +46,7 @@ public class PsiFileUtil {
             });
 
         } catch (Throwable e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 

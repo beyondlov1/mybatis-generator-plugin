@@ -39,6 +39,10 @@
     <intentionAction>
       <className>com.beyond.generator.action.EntityGenerateAction</className>
     </intentionAction>
+
+    <intentionAction>
+      <className>com.beyond.generator.action.MyBatisSql2EntityAction</className>
+    </intentionAction>
   </extensions>
 
 
