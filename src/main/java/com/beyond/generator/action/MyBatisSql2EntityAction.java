@@ -8,6 +8,7 @@ import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
 import com.beyond.gen.freemarker.JavaEntity;
 import com.beyond.generator.PathUtils;
 import com.beyond.generator.PluginUtils;
+import com.beyond.generator.ui.CopyableMsgDialog;
 import com.beyond.generator.ui.EntityForm;
 import com.beyond.generator.ui.EntityNameForm;
 import com.beyond.generator.utils.MybatisToSqlUtils;
@@ -114,6 +115,7 @@ public class MyBatisSql2EntityAction extends PsiElementBaseIntentionAction {
                     editor.getDocument().replaceString(editor.getSelectionModel().getSelectionStart(), editor.getSelectionModel().getSelectionEnd(), replaced);
                 }
                 msg(project, "Success!");
+                CopyableMsgDialog.show(project, entityNameForm.getData().get("packageName")+"."+entityNameForm.getData().get("entityName"));
             }
 
         } catch (Exception e) {
