@@ -52,18 +52,35 @@ public class MapperUtil {
         MapperXmlEntity mapperXmlEntity = new MapperXmlEntity();
         mapperXmlEntity.setEntityClassFullName(entityFullName);
         mapperXmlEntity.setMapperClassFullName(mapperFullName);
+        int primaryColumnCount = 0;
         for (Column column : columns) {
             String columnKey = column.getColumnKey();
             if (org.apache.commons.lang3.StringUtils.equalsIgnoreCase("PRI", columnKey)) {
-                mapperXmlEntity.setIdColumnName(column.getColumnName());
-                mapperXmlEntity.setIdPropertyName(StringUtils.lineToHump(column.getColumnName()));
-                mapperXmlEntity.setIdJdbcType(TypeConverter.toCommonJdbcType(column.getDataType()).toUpperCase());
-                break;
+                primaryColumnCount ++;
             }
         }
-        for (Column column : columns) {
-            String columnKey = column.getColumnKey();
-            if (!org.apache.commons.lang3.StringUtils.equalsIgnoreCase("PRI", columnKey)) {
+        if (primaryColumnCount == 1){
+            for (Column column : columns) {
+                String columnKey = column.getColumnKey();
+                if (org.apache.commons.lang3.StringUtils.equalsIgnoreCase("PRI", columnKey)) {
+                    mapperXmlEntity.setIdColumnName(column.getColumnName());
+                    mapperXmlEntity.setIdPropertyName(StringUtils.lineToHump(column.getColumnName()));
+                    mapperXmlEntity.setIdJdbcType(TypeConverter.toCommonJdbcType(column.getDataType()).toUpperCase());
+                    break;
+                }
+            }
+            for (Column column : columns) {
+                String columnKey = column.getColumnKey();
+                if (!org.apache.commons.lang3.StringUtils.equalsIgnoreCase("PRI", columnKey)) {
+                    MapperXmlEntity.ColumnEntity columnEntity = new MapperXmlEntity.ColumnEntity();
+                    columnEntity.setColumnName(column.getColumnName());
+                    columnEntity.setPropertyName(StringUtils.lineToHump(column.getColumnName()));
+                    columnEntity.setJdbcType(TypeConverter.toCommonJdbcType(column.getDataType()).toUpperCase());
+                    mapperXmlEntity.getNormalColumns().add(columnEntity);
+                }
+            }
+        }else {
+            for (Column column : columns) {
                 MapperXmlEntity.ColumnEntity columnEntity = new MapperXmlEntity.ColumnEntity();
                 columnEntity.setColumnName(column.getColumnName());
                 columnEntity.setPropertyName(StringUtils.lineToHump(column.getColumnName()));
@@ -71,6 +88,7 @@ public class MapperUtil {
                 mapperXmlEntity.getNormalColumns().add(columnEntity);
             }
         }
+
         return mapperXmlEntity;
     }
 
