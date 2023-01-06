@@ -112,10 +112,11 @@ public class MyBatisSql2EntityAction extends PsiElementBaseIntentionAction {
                 String forReplace = extractSelect(extractContent(selectedText));
                 if (StringUtils.isNotBlank(forReplace) && StringUtils.isNotBlank(target) && !forReplace.contains("<")){
                     String replaced = selectedText.replace(forReplace, " "+target+" ");
+                    String entityFullName = entityNameForm.getData().get("packageName") + "." + entityNameForm.getData().get("entityName");
+                    replaced = replaced.replaceAll("(?:resultMap|resultType)=\".*\"", "resultType=\"" + entityFullName + "\"");
                     editor.getDocument().replaceString(editor.getSelectionModel().getSelectionStart(), editor.getSelectionModel().getSelectionEnd(), replaced);
                 }
                 msg(project, "Success!");
-                CopyableMsgDialog.show(project, entityNameForm.getData().get("packageName")+"."+entityNameForm.getData().get("entityName"));
             }
 
         } catch (Exception e) {

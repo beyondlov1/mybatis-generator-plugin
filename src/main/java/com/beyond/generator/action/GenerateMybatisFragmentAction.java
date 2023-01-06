@@ -17,6 +17,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpressionStatement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiImportList;
@@ -50,12 +51,14 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.beyond.generator.utils.MapperUtil.*;
 import static com.beyond.generator.utils.PropertyUtil.*;
 import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
 
 /**
+ * generate mybatis fragment
  * @author chenshipeng
  * @date 2022/11/08
  */

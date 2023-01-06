@@ -58,6 +58,35 @@ public class MybatisToSqlUtils {
         return null;
     }
 
+    public static String toSql(String mybatisSqlXml) throws JDOMException, IOException {
+        try (StringReader stringReader = new StringReader(mybatisSqlXml)){
+            SAXBuilder sb = new SAXBuilder();
+            org.jdom.Document doc = sb.build(stringReader);
+            Element root = doc.getRootElement();
+            Element node = root;
+            if (node != null){
+                List<Element> includes = XPath.selectNodes(node, "//include");
+                List<Element> foreachs = XPath.selectNodes(node, "//foreach");
+                for (Element include : includes) {
+                    Element parentElement = include.getParentElement();
+                    int i = parentElement.indexOf(include);
+                    parentElement.removeChild(include.getName());
+                    parentElement.addContent(i,new Text(getText(include, root)));
+                }
+
+                for (Element foreach : foreachs) {
+                    Element parentElement = foreach.getParentElement();
+                    int i = parentElement.indexOf(foreach);
+                    parentElement.removeChild(foreach.getName());
+                    parentElement.addContent(i,new Text(getText(foreach, root)));
+                }
+                return node.getText().replaceAll("\\#\\{.*?\\}", "?");
+            }
+            return null;
+        }
+    }
+
+
     private static String getText(Object o,Element root) throws JDOMException {
         StringBuilder s = new StringBuilder();
         if (o instanceof Element){

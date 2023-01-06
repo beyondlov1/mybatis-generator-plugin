@@ -55,10 +55,11 @@ import static com.beyond.generator.utils.PropertyUtil.*;
 import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
 
 /**
+ * generate mybatis result map
  * @author chenshipeng
  * @date 2022/11/08
  */
-public class GenerateMybatisFragmentAction2 extends PsiElementBaseIntentionAction {
+public class GenerateMybatisResultMapAction extends PsiElementBaseIntentionAction {
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
 

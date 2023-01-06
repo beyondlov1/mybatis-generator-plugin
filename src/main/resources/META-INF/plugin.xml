@@ -29,7 +29,11 @@
     </intentionAction>
 
     <intentionAction>
-      <className>com.beyond.generator.action.GenerateMybatisFragmentAction2</className>
+      <className>com.beyond.generator.action.GenerateMybatisFragmentFromSQLAction</className>
+    </intentionAction>
+
+    <intentionAction>
+      <className>com.beyond.generator.action.GenerateMybatisResultMapAction</className>
     </intentionAction>
 
     <intentionAction>
