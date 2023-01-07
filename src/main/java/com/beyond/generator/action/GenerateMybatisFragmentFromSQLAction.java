@@ -130,9 +130,10 @@ public class GenerateMybatisFragmentFromSQLAction extends PsiElementBaseIntentio
         String resultType = packageName + "." + entityName;
 
 
+        List<String> propertyNames = new ArrayList<>();
+
         String replacedSql = "";
         if (StringUtils.isNotBlank(mybatisSql)){
-            List<String> propertyNames = new ArrayList<>();
 
             if (!mybatisSql.trim().toLowerCase().startsWith("select")){
                 mybatisSql = "select "+mybatisSql.trim();
@@ -161,10 +162,9 @@ public class GenerateMybatisFragmentFromSQLAction extends PsiElementBaseIntentio
             // 处理sql, 替换select
             replacedSql = mybatisSql.replace(extractSelect(mybatisSql),extractSelect(sqlStatement.toString()));
 
-            if (!propertyNames.isEmpty()){
-                generateEntity(project, false, packageName, entityName, propertyNames);
-            }
         }
+
+        generateEntity(project, false, packageName, entityName, propertyNames);
 
 
         boolean isContinue = genMapperXmlFragment(project, psiDocumentManager, containingClass, methodName, replacedSql, resultType);
