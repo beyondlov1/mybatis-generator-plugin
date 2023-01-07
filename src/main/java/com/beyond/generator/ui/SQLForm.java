@@ -38,8 +38,8 @@ public class SQLForm extends DialogWrapper {
 
     @Override
     protected @Nullable JComponent createCenterPanel() {
-        return form.addItem(new TextAreaItem("sql", "sql: ", "", submitRunnable))
-                .buildPanel(1, 3);
+        return form.addItem(new TextAreaItem("sql", null, "", submitRunnable))
+                .buildPanel(1, 2, 500, 300);
     }
 
 

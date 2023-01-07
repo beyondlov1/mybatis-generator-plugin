@@ -44,7 +44,6 @@ public class TextAreaItem implements FormItem {
         if (labelText != null){
             jLabel = new JLabel(labelText);
             jTextArea = new JBTextArea();
-            jTextArea.setColumns(2);
             jTextArea.setPreferredSize(new Dimension(300, 0));
         }else{
             jTextArea = new JBTextArea();

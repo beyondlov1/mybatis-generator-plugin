@@ -30,6 +30,13 @@ public class Form {
         return jPanel;
     }
 
+
+    public JPanel buildPanel(int rows, int cols, int prefWidth, int prefHight){
+        JPanel jPanel = buildPanel(rows, cols);
+        jPanel.setPreferredSize(new Dimension(prefWidth, prefHight));
+        return jPanel;
+    }
+
     public Map<String,String> getData() {
         Map<String, String> data = new HashMap<>();
         for (FormItem formItem : itemList) {

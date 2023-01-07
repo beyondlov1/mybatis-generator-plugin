@@ -5,6 +5,7 @@ import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.expr.SQLPropertyExpr;
 import com.alibaba.druid.sql.ast.statement.SQLSelectItem;
 import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
+import com.alibaba.druid.sql.parser.ParserException;
 import com.beyond.gen.freemarker.FragmentGenUtils;
 import com.beyond.gen.freemarker.JavaEntity;
 import com.beyond.generator.Column;
@@ -126,35 +127,46 @@ public class GenerateMybatisFragmentFromSQLAction extends PsiElementBaseIntentio
             }
         }
 
+        String resultType = packageName + "." + entityName;
 
-        String mybatisSqlXml = "<select>" + mybatisSql + "</select>";
-        String sql = MybatisToSqlUtils.toSql(mybatisSqlXml);
 
-        SQLStatement sqlStatement = SQLUtils.parseSingleMysqlStatement(sql);
+        String replacedSql = "";
+        if (StringUtils.isNotBlank(mybatisSql)){
+            List<String> propertyNames = new ArrayList<>();
 
-        List<String> propertyNames = new ArrayList<>();
-        List<SQLSelectItem> selectList = ((SQLSelectStatement) sqlStatement).getSelect().getQueryBlock().getSelectList();
-        for (SQLSelectItem selectItem : selectList) {
-            String propertyName = selectItem.getExpr().toString();
-            String alias = selectItem.getAlias2();
-            if (alias == null){
-                if (selectItem.getExpr() instanceof SQLPropertyExpr){
-                    propertyName = ((SQLPropertyExpr) selectItem.getExpr()).getName();
-                }
-                if (propertyName.contains("_")){
-                    propertyName = com.beyond.generator.StringUtils.lineToHump(propertyName);
-                    selectItem.setAlias(propertyName);
-                }
-            }else {
-                propertyName = alias;
+            if (!mybatisSql.trim().toLowerCase().startsWith("select")){
+                mybatisSql = "select "+mybatisSql.trim();
             }
-            propertyNames.add(propertyName);
+
+            String mybatisSqlXml = "<select>" + mybatisSql + "</select>";
+            String sql = MybatisToSqlUtils.toSql(mybatisSqlXml);
+            SQLStatement sqlStatement = SQLUtils.parseSingleMysqlStatement(sql);
+            List<SQLSelectItem> selectList = ((SQLSelectStatement) sqlStatement).getSelect().getQueryBlock().getSelectList();
+            for (SQLSelectItem selectItem : selectList) {
+                String propertyName = selectItem.getExpr().toString();
+                String alias = selectItem.getAlias2();
+                if (alias == null){
+                    if (selectItem.getExpr() instanceof SQLPropertyExpr){
+                        propertyName = ((SQLPropertyExpr) selectItem.getExpr()).getName();
+                    }
+                    if (propertyName.contains("_")){
+                        propertyName = com.beyond.generator.StringUtils.lineToHump(propertyName);
+                        selectItem.setAlias(propertyName);
+                    }
+                }else {
+                    propertyName = alias;
+                }
+                propertyNames.add(propertyName);
+            }
+            // 处理sql, 替换select
+            replacedSql = mybatisSql.replace(extractSelect(mybatisSql),extractSelect(sqlStatement.toString()));
+
+            if (!propertyNames.isEmpty()){
+                generateEntity(project, false, packageName, entityName, propertyNames);
+            }
         }
 
-        String resultType = packageName + "." + entityName;
-        generateEntity(project, false, packageName, entityName, propertyNames);
-        // 处理sql, 替换select
-        String replacedSql = mybatisSql.replace(extractSelect(mybatisSql),extractSelect(sqlStatement.toString()));
+
         boolean isContinue = genMapperXmlFragment(project, psiDocumentManager, containingClass, methodName, replacedSql, resultType);
         if (isContinue) {
             isContinue = genMapperFragment2(project, psiDocumentManager, document, containingClass, methodName, entityName, resultType, mybatisSql);
@@ -166,12 +178,12 @@ public class GenerateMybatisFragmentFromSQLAction extends PsiElementBaseIntentio
 
     Pattern pattern = Pattern.compile("select(.*?)from", Pattern.CASE_INSENSITIVE|Pattern.MULTILINE|Pattern.DOTALL);
     private String extractSelect(String sql){
-        if (sql == null) return null;
+        if (sql == null) return "";
         Matcher matcher = pattern.matcher(sql);
         if(matcher.find()){
             return matcher.group(1);
         }
-        return null;
+        return "";
     }
 
     private void generateEntity(@NotNull Project project, boolean useCache,String packageName, String entityName, List<String> fieldNames) {
