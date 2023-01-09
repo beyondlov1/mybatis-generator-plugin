@@ -284,12 +284,24 @@ public class GenerateMybatisFragmentFromSQLAction extends PsiElementBaseIntentio
         }
     }
 
+    private static Pattern mybatisForeachPattern = Pattern.compile("<foreach.*?collection.*?=.*?\"(.*?)\".*?>.*?</foreach>", Pattern.MULTILINE|Pattern.DOTALL);
     private static Pattern mybatisVarPattern = Pattern.compile("\\#\\{(.*?)\\}");
 
-    private boolean genMapperFragment2(Project project, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName, String entityName, String fullEntityName, String sql) {
+    private boolean genMapperFragment2(Project project, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName, String entityName, String fullEntityName, String mybatisSql) {
+
+        String mybatisSqlForExtract = mybatisSql;
 
         List<String> fields = new ArrayList<>();
-        Matcher matcher = mybatisVarPattern.matcher(sql);
+
+        // 处理foreach
+        Matcher foreachMatcher = mybatisForeachPattern.matcher(mybatisSqlForExtract);
+        while (foreachMatcher.find()){
+            fields.add(foreachMatcher.group(1));
+        }
+        mybatisSqlForExtract = foreachMatcher.replaceAll("");
+
+        // 提取 #{}
+        Matcher matcher = mybatisVarPattern.matcher(mybatisSqlForExtract);
         while (matcher.find()){
             fields.add(matcher.group(1));
         }
