@@ -5,15 +5,20 @@
   <vendor email="support@beyond.com" url="http://www.beyond.com">Beyond</vendor>
 
   <description>
-    https://github.com/beyondlov1/mybatis-generator-plugin
+      <![CDATA[
+          mybatis-generator-plugin
+          Features:
+       <ul>
+          <li>generate mybatis mapper class,mapper xml,entity class</li>
+          <li>generate mybatis xml fragment and entity class from method name</li>
+          <li>generate mybatis xml fragment and entity class from SQL</li>
+          <li>convert doc comments to swagger annotations (experimental)</li>
+      </ul>
+      ]]>
   </description>
 
-  <change-notes>
-    change notes
-  </change-notes>
-
   <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-  <idea-version since-build="173.0"/>
+  <idea-version since-build="201.0"/>
 
   <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
        on how to target different products -->
