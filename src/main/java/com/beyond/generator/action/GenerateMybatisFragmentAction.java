@@ -4,6 +4,7 @@ import com.beyond.gen.freemarker.FragmentGenUtils;
 import com.beyond.generator.Column;
 import com.beyond.generator.ui.JdbcForm;
 import com.beyond.generator.utils.MapperUtil;
+import com.beyond.generator.utils.PerformanceUtil;
 import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiElementUtil;
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
@@ -17,7 +18,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiExpressionStatement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiImportList;
@@ -26,18 +26,14 @@ import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiPackageStatement;
 import com.intellij.psi.PsiReferenceExpression;
-import com.intellij.psi.impl.PsiJavaParserFacadeImpl;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.javadoc.PsiDocTagValue;
-import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.PatternUtil;
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import com.mysql.cj.jdbc.MysqlDataSource;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -51,7 +47,6 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.beyond.generator.utils.MapperUtil.*;
 import static com.beyond.generator.utils.PropertyUtil.*;
@@ -83,13 +78,16 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         } else {
             PsiClass psiClass;
             try {
+                PerformanceUtil.mark("invoke1");
                 String methodName = element.getPrevSibling().getFirstChild().getLastChild().getText();
                 psiClass = ((PsiClassReferenceType) ((PsiField) ((PsiReferenceExpression) element.getPrevSibling().getFirstChild().getFirstChild()).resolve()).getType()).resolve();
                 if (isMapperClass(psiClass)) {
                     VirtualFile classVirtualFile = psiClass.getContainingFile().getVirtualFile();
                     Document classDocument = FileDocumentManager.getInstance().getDocument(classVirtualFile);
                     if (classDocument != null) {
+                        PerformanceUtil.mark("invoke2");
                         gen2(project, psiDocumentManager, classDocument, psiClass, methodName);
+                        PerformanceUtil.mark("invoke3");
                     }
                 }
             } catch (Exception e) {
@@ -130,9 +128,13 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
             }
         }
 
+        PerformanceUtil.mark("gen2_1");
         boolean isContinue = genMapperXmlFragment(project, psiDocumentManager, containingClass, docComment, methodName);
+        PerformanceUtil.mark("gen2_2");
         if (isContinue) {
+            PerformanceUtil.mark("gen2_3");
             isContinue = genMapperFragment2(project, psiDocumentManager, document, containingClass, methodName, entityName, fullEntityName);
+            PerformanceUtil.mark("gen2_4");
             if (isContinue) {
                 msg(project, "Success!");
             }
@@ -141,6 +143,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
 
     private boolean genMapperFragment2(Project project, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName, String entityName, String fullEntityName) {
 
+        PerformanceUtil.mark("genMapperFragment2_1");
         int start = document.getText().lastIndexOf("}");
         String paramFragment = FragmentGenUtils.createParamFragment(methodName);
         boolean needList = false;
@@ -152,7 +155,12 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
         document.insertString(start + entityName.length() + 5, methodName);
         document.insertString(start + entityName.length() + 5 + methodName.length(), paramFragment + ";\n");
 
+        PerformanceUtil.mark("genMapperFragment2_1");
+
         addEntityImport(project, document, containingClass, entityName, fullEntityName, needList);
+
+        PerformanceUtil.mark("genMapperFragment2_2");
+
 
         PsiDocumentUtils.commitAndSaveDocument(psiDocumentManager, document);
         return true;
@@ -258,7 +266,9 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
     private boolean genMapperXmlFragment(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment, String methodName) throws JDOMException, IOException {
 
         String qualifiedName = mapperClass.getQualifiedName();
+        PerformanceUtil.mark("genMapperXmlFragment_1");
         VirtualFile mapperXmlFile = findMapperXmlByName(qualifiedName, ProjectUtil.guessProjectDir(project));
+        PerformanceUtil.mark("genMapperXmlFragment_2");
 
         String tableName = null;
         String entityFullName = null;
@@ -284,6 +294,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
             throw new RuntimeException("please add '/** @table schema.table */' in doc comment.");
         }
 
+        PerformanceUtil.mark("genMapperXmlFragment_3");
         Document xmldoc = FileDocumentManager.getInstance().getDocument(mapperXmlFile);
         if (xmldoc != null) {
             SAXBuilder sb = new SAXBuilder();
@@ -308,6 +319,7 @@ public class GenerateMybatisFragmentAction extends PsiElementBaseIntentionAction
                 // todo replace
             }
         }
+        PerformanceUtil.mark("genMapperXmlFragment_4");
         return true;
     }
 

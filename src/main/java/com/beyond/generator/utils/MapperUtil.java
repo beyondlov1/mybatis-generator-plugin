@@ -6,7 +6,9 @@ import com.beyond.gen.freemarker.MapperXmlEntity;
 import com.beyond.generator.Column;
 import com.beyond.generator.StringUtils;
 import com.beyond.generator.TypeConverter;
-import com.beyond.generator.ui.MsgDialog;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
@@ -22,7 +24,7 @@ import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import com.mysql.cj.jdbc.MysqlDataSource;
 import org.apache.commons.lang.ArrayUtils;
 import org.jdom.Attribute;
 import org.jdom.Element;
@@ -120,6 +122,7 @@ public class MapperUtil {
 
         final VirtualFile[] found = {null};
         FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+        SAXBuilder sb = new SAXBuilder();
         VfsUtilCore.visitChildrenRecursively(root, new VirtualFileVisitor<Object>() {
             @Override
             public boolean visitFile(@NotNull VirtualFile file) {
@@ -132,7 +135,6 @@ public class MapperUtil {
                         final String text = xmldoc.getText();
                         if (!text.contains(mapperFullName)) return false;
                         try (StringReader stringReader = new StringReader(text)){
-                            SAXBuilder sb = new SAXBuilder();
                             org.jdom.Document doc = sb.build(stringReader);
                             Attribute namespaceText = (Attribute) XPath.selectSingleNode(doc.getRootElement(), "//mapper/@namespace");
                             if (namespaceText != null) {
@@ -172,8 +174,11 @@ public class MapperUtil {
     }
 
     public static void msg(@NotNull Project project, String s) {
-        MsgDialog msgDialog = new MsgDialog(project, s);
-        msgDialog.show();
+//        MsgDialog msgDialog = new MsgDialog(project, s);
+//        msgDialog.show();
+
+//        JOptionPane.showMessageDialog(null, s, "MyBatis-Generator", JOptionPane.INFORMATION_MESSAGE);
+        Notifications.Bus.notifyAndHide(new Notification("MyBatis-Generator","MyBatis-Generator", s, NotificationType.INFORMATION));
     }
 
 
@@ -182,9 +187,16 @@ public class MapperUtil {
         if (selectionEnd == 0) return null;
         int len = 1;
         while (len < 50) {
+            if (selectionEnd - len < 0){
+                len --;
+                break;
+            }
             String text = document.getText(TextRange.create(selectionEnd - len, selectionEnd));
-            if (text.startsWith(" ") || text.startsWith("\n") || text.startsWith("\r\n") || text.startsWith("\t")) {
+            if (text.startsWith(" ") || text.startsWith("\n")  || text.startsWith("\t") || text.startsWith(".")) {
                 return text.substring(1);
+            }
+            if (text.startsWith("\r\n")) {
+                return text.substring(2);
             }
             len++;
         }
@@ -211,8 +223,10 @@ public class MapperUtil {
 
 
     public static String completeFullEntityName(@NotNull Project project, PsiDocumentManager psiDocumentManager, String entityName, PsiDocComment docComment) {
+        PerformanceUtil.mark("completeFullEntityName1");
         if (!entityName.contains(".")) {
             @NotNull PsiClass[] entityClasses = PsiShortNamesCache.getInstance(project).getClassesByName(entityName, GlobalSearchScope.allScope(project));
+            PerformanceUtil.mark("completeFullEntityName3");
             if (!ArrayUtils.isEmpty(entityClasses)) {
                 PsiClass entityClass = entityClasses[0];
                 Document document = psiDocumentManager.getDocument(docComment.getContainingFile());
@@ -226,6 +240,7 @@ public class MapperUtil {
                 entityName = entityClass.getQualifiedName();
             }
         }
+        PerformanceUtil.mark("completeFullEntityName2");
         return entityName;
     }
 

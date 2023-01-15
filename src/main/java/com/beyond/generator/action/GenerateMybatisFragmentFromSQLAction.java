@@ -46,7 +46,6 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.PatternUtil;
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jdom.Element;
