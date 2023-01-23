@@ -178,7 +178,7 @@ public class MapperUtil {
 //        msgDialog.show();
 
 //        JOptionPane.showMessageDialog(null, s, "MyBatis-Generator", JOptionPane.INFORMATION_MESSAGE);
-        Notifications.Bus.notifyAndHide(new Notification("MyBatis-Generator","MyBatis-Generator", s, NotificationType.INFORMATION));
+        Notifications.Bus.notify(new Notification("MyBatis-Generator","MyBatis-Generator", s, NotificationType.INFORMATION));
     }
 
 
