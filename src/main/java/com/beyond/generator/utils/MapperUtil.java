@@ -6,6 +6,8 @@ import com.beyond.gen.freemarker.MapperXmlEntity;
 import com.beyond.generator.Column;
 import com.beyond.generator.StringUtils;
 import com.beyond.generator.TypeConverter;
+import com.beyond.generator.dom.Mapper;
+import com.beyond.generator.ui.MsgDialog;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
@@ -13,6 +15,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -24,6 +27,9 @@ import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
+import com.intellij.util.xml.DomFileElement;
+import com.intellij.util.xml.DomService;
+import com.intellij.util.xml.GenericAttributeValue;
 import com.mysql.cj.jdbc.MysqlDataSource;
 import org.apache.commons.lang.ArrayUtils;
 import org.jdom.Attribute;
@@ -40,17 +46,18 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author chenshipeng
  * @date 2022/11/23
  */
 public class MapperUtil {
-    public static MapperXmlEntity createMapperXmlEntity(JavaEntity javaEntity, MapperEntity mapperEntity, List<Column> columns){
+    public static MapperXmlEntity createMapperXmlEntity(JavaEntity javaEntity, MapperEntity mapperEntity, List<Column> columns) {
         return createMapperXmlEntity(javaEntity.getPackageName() + "." + javaEntity.getClassName(), mapperEntity.getPackageName() + "." + mapperEntity.getMapperName(), columns);
     }
 
-    public static MapperXmlEntity createMapperXmlEntity(String entityFullName, String mapperFullName, List<Column> columns){
+    public static MapperXmlEntity createMapperXmlEntity(String entityFullName, String mapperFullName, List<Column> columns) {
         MapperXmlEntity mapperXmlEntity = new MapperXmlEntity();
         mapperXmlEntity.setEntityClassFullName(entityFullName);
         mapperXmlEntity.setMapperClassFullName(mapperFullName);
@@ -58,10 +65,10 @@ public class MapperUtil {
         for (Column column : columns) {
             String columnKey = column.getColumnKey();
             if (org.apache.commons.lang3.StringUtils.equalsIgnoreCase("PRI", columnKey)) {
-                primaryColumnCount ++;
+                primaryColumnCount++;
             }
         }
-        if (primaryColumnCount == 1){
+        if (primaryColumnCount == 1) {
             for (Column column : columns) {
                 String columnKey = column.getColumnKey();
                 if (org.apache.commons.lang3.StringUtils.equalsIgnoreCase("PRI", columnKey)) {
@@ -81,7 +88,7 @@ public class MapperUtil {
                     mapperXmlEntity.getNormalColumns().add(columnEntity);
                 }
             }
-        }else {
+        } else {
             for (Column column : columns) {
                 MapperXmlEntity.ColumnEntity columnEntity = new MapperXmlEntity.ColumnEntity();
                 columnEntity.setColumnName(column.getColumnName());
@@ -94,17 +101,39 @@ public class MapperUtil {
         return mapperXmlEntity;
     }
 
-    public static MapperXmlEntity createMapperXmlResultMapEntity(String entityFullName,List<Column> columns){
+    public static MapperXmlEntity createMapperXmlResultMapEntity(String entityFullName, List<Column> columns) {
         return createMapperXmlEntity(entityFullName, null, columns);
     }
 
-    public static MapperXmlEntity createMapperXmlColumnListEntity(List<Column> columns){
-        return createMapperXmlEntity((String) null, (String)null, columns);
+    public static MapperXmlEntity createMapperXmlColumnListEntity(List<Column> columns) {
+        return createMapperXmlEntity((String) null, (String) null, columns);
     }
 
+    public static Mapper findMapperXmlByName(Project project, String mapperFullName) {
+        GlobalSearchScope scope = GlobalSearchScope.allScope(project);
+        List<DomFileElement<Mapper>> elements = DomService.getInstance().getFileElements(Mapper.class, project, scope);
+        List<Mapper> mappers = elements.stream().map(DomFileElement::getRootElement).collect(Collectors.toList());
+        for (Mapper mapper : mappers) {
+            GenericAttributeValue<String> namespace = mapper.getNamespace();
+            if (namespace.getValue() != null && org.apache.commons.lang3.StringUtils.equals(namespace.getValue(), mapperFullName)) {
+                return mapper;
+            }
+        }
+        return null;
+    }
+
+    public static VirtualFile toVirtualFile(Mapper mapper) {
+        if (mapper != null && mapper.exists() && mapper.getXmlElement() != null && mapper.getXmlElement().getContainingFile() != null) {
+            return mapper.getXmlElement().getContainingFile().getVirtualFile();
+        } else {
+            return null;
+        }
+    }
 
     private static Map<String, VirtualFile> mapper2xmlMap = new HashMap<>();
-    public static VirtualFile findMapperXmlByName(String mapperFullName, VirtualFile root) {
+
+    public static VirtualFile findMapperXmlByName2(Project project, String mapperFullName) {
+        VirtualFile root = ProjectUtil.guessProjectDir(project);
         VirtualFile xmlPath = mapper2xmlMap.get(mapperFullName);
         if (xmlPath != null) {
             if (xmlPath.exists()) {
@@ -115,7 +144,7 @@ public class MapperUtil {
         }
 
         VirtualFile projectDir = root;
-        if (root != null){
+        if (root != null) {
             root = root.findFileByRelativePath("src/main");
         }
         if (root == null) root = projectDir;
@@ -134,7 +163,7 @@ public class MapperUtil {
                     if (xmldoc != null) {
                         final String text = xmldoc.getText();
                         if (!text.contains(mapperFullName)) return false;
-                        try (StringReader stringReader = new StringReader(text)){
+                        try (StringReader stringReader = new StringReader(text)) {
                             org.jdom.Document doc = sb.build(stringReader);
                             Attribute namespaceText = (Attribute) XPath.selectSingleNode(doc.getRootElement(), "//mapper/@namespace");
                             if (namespaceText != null) {
@@ -178,21 +207,30 @@ public class MapperUtil {
 //        msgDialog.show();
 
 //        JOptionPane.showMessageDialog(null, s, "MyBatis-Generator", JOptionPane.INFORMATION_MESSAGE);
-        Notifications.Bus.notify(new Notification("MyBatis-Generator","MyBatis-Generator", s, NotificationType.INFORMATION));
+        Notifications.Bus.notify(new Notification("MyBatis-Generator", "MyBatis-Generator", s, NotificationType.INFORMATION));
+    }
+
+    public static void msgE(@NotNull Project project, String s) {
+        Notifications.Bus.notify(new Notification("MyBatis-Generator", "MyBatis-Generator", s, NotificationType.ERROR));
+    }
+
+    public static void msgDialog(@NotNull Project project, String s) {
+        MsgDialog msgDialog = new MsgDialog(project, s);
+        msgDialog.show();
     }
 
 
-    public static  String getPrevWord(Document document, Editor editor) {
+    public static String getPrevWord(Document document, Editor editor) {
         int selectionEnd = editor.getSelectionModel().getSelectionEnd();
         if (selectionEnd == 0) return null;
         int len = 1;
         while (len < 50) {
-            if (selectionEnd - len < 0){
-                len --;
+            if (selectionEnd - len < 0) {
+                len--;
                 break;
             }
             String text = document.getText(TextRange.create(selectionEnd - len, selectionEnd));
-            if (text.startsWith(" ") || text.startsWith("\n")  || text.startsWith("\t") || text.startsWith(".")) {
+            if (text.startsWith(" ") || text.startsWith("\n") || text.startsWith("\t") || text.startsWith(".")) {
                 return text.substring(1);
             }
             if (text.startsWith("\r\n")) {

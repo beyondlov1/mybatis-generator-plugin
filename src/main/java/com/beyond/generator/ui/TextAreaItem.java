@@ -63,7 +63,7 @@ public class TextAreaItem implements FormItem {
 
                 @Override
                 public void keyPressed(KeyEvent e) {
-                    if (e.getKeyCode() == KeyEvent.VK_ENTER){
+                    if (e.getKeyCode() == KeyEvent.VK_ENTER && e.isControlDown() ){
                         runnable.run();
                     }
                 }

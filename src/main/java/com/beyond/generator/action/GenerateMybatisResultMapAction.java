@@ -2,9 +2,12 @@ package com.beyond.generator.action;
 
 import com.beyond.gen.freemarker.FragmentGenUtils;
 import com.beyond.generator.Column;
+import com.beyond.generator.dom.IdDomElement;
+import com.beyond.generator.dom.Mapper;
 import com.beyond.generator.ui.JdbcForm;
 import com.beyond.generator.ui.MsgDialog;
 import com.beyond.generator.utils.MapperUtil;
+import com.beyond.generator.utils.PerformanceUtil;
 import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiElementUtil;
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
@@ -48,6 +51,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static com.beyond.generator.utils.MapperUtil.*;
@@ -59,7 +63,7 @@ import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
  * @author chenshipeng
  * @date 2022/11/08
  */
-public class GenerateMybatisResultMapAction extends PsiElementBaseIntentionAction {
+public class GenerateMybatisResultMapAction extends GenerateMyBatisBaseAction {
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
 
@@ -108,8 +112,10 @@ public class GenerateMybatisResultMapAction extends PsiElementBaseIntentionActio
 
 
     private boolean genMapperXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment) throws JDOMException, IOException {
-        
-        VirtualFile mapperXmlFile = findMapperXmlByName(mapperClass.getQualifiedName(), ProjectUtil.guessProjectDir(project));
+
+        String qualifiedName = mapperClass.getQualifiedName();
+        Mapper mapper = findMapperXmlByName(project, qualifiedName);
+        VirtualFile mapperXmlFile = toVirtualFile(mapper);
 
         String tableFullName = null;
         String entityFullName = null;
@@ -132,126 +138,20 @@ public class GenerateMybatisResultMapAction extends PsiElementBaseIntentionActio
             }
         }
 
-
+        if (mapperXmlFile == null) return false;
         Document xmldoc = FileDocumentManager.getInstance().getDocument(mapperXmlFile);
         if (xmldoc != null) {
-            SAXBuilder sb = new SAXBuilder();
-            StringReader xmlStringReader = new StringReader(xmldoc.getText());
-            org.jdom.Document doc = sb.build(xmlStringReader);
-            Element root = doc.getRootElement();
+            // Base_Column_List and ResultMap
+            Optional<IdDomElement> sqlOptional = mapper.getSqls().stream().filter(x -> StringUtils.equals(x.getId().getValue(), "Base_Column_List")).findFirst();
+            Optional<IdDomElement> resultMapOptional = mapper.getResultMaps().stream().filter(x -> StringUtils.equals(x.getId().getValue(), "BaseResultMap")).findFirst();
 
-            Element columnListElement = getElementByNameAndAttr(root, "//mapper/sql", "id", "Base_Column_List");
-            Element resultMapElement = getElementByNameAndAttr(root, "//mapper/resultMap", "id",  "BaseResultMap");
-
-            if (columnListElement != null && resultMapElement != null) return true;
-
-
-            String jdbcUrl = getProperty("jdbcUrl", project);
-            String username = getUserName(project);
-            String password = getPassword(project);
-
-            if (StringUtils.isBlank(jdbcUrl) || StringUtils.isBlank(username) || StringUtils.isBlank(password)) {
-                JdbcForm jdbcForm = new JdbcForm(project);
-                jdbcForm.show(form -> {
-                    try {
-                        String jdbcUrl1 = StringUtils.trimToNull(form.getData().get("jdbcUrl"));
-                        String username1 = StringUtils.trimToNull(form.getData().get("username"));
-                        String password1 = StringUtils.trimToNull(form.getData().get("password"));
-
-                        boolean pass = testConnection(jdbcUrl1, username1, password1);
-                        if (!pass) {
-                            throw new RuntimeException( "fail");
-                        }
-
-                        form.setOk(true);
-                        form.close(OK_EXIT_CODE);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        msg(project, e.getMessage());
-                    }
-                }, form -> {
-                    try {
-                        String jdbcUrl12 = form.getData().get("jdbcUrl").trim();
-                        String username12 = form.getData().get("username").trim();
-                        String password12 = form.getData().get("password").trim();
-
-                        boolean pass = testConnection(jdbcUrl12, username12, password12);
-                        if (!pass) {
-                            throw new RuntimeException( "fail");
-                        }
-                        form.setOk(false);
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        msg(project, e.getMessage());
-                    }
-                });
-                if (jdbcForm.isOk()){
-                    jdbcUrl = getProperty("jdbcUrl", project);
-                    username = getUserName(project);
-                    password = getPassword(project);
-                    doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, columnListElement, resultMapElement, jdbcUrl, username, password);
-                }
-                if (jdbcForm.isOk()) return true;
-            }else {
-                doCreateXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, columnListElement, resultMapElement, jdbcUrl, username, password);
-                return true;
+            boolean isContinue = createXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, sqlOptional.isPresent(), resultMapOptional.isPresent());
+            if (!isContinue) {
+                return false;
             }
         }
         return true;
     }
-
-    private void doCreateXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, String tableFullName, String entityFullName, Document xmldoc, Element columnListElement, Element resultMapElement, String jdbcUrl, String username, String password) {
-
-        MysqlDataSource dataSource = new MysqlDataSource();
-        dataSource.setUrl(jdbcUrl);
-        dataSource.setUser(username);
-        dataSource.setPassword(password);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate();
-        jdbcTemplate.setDataSource(dataSource);
-
-        if (tableFullName == null || !tableFullName.contains(".")) {
-            throw new RuntimeException( "please add '/** @table schema.table */' in doc comment.");
-        }
-
-        String[] split = tableFullName.split("\\.");
-        String schema = split[0];
-        String tableName = split[1];
-
-        String sql = String.format("select * from information_schema.COLUMNS where TABLE_SCHEMA = '%s' and TABLE_NAME = '%s'", schema, tableName);
-        List<Column> columns = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Column.class));
-        if (CollectionUtils.isEmpty(columns)) {
-            throw new RuntimeException("table not exist");
-        }
-
-
-        if (columnListElement == null) {
-            String[] lines = xmldoc.getText().split("\n");
-            String mapperStr = PatternUtil.getFirstMatch(Arrays.asList(lines), Pattern.compile("(<mapper.*>)"));
-            if (mapperStr!=null){
-                int insertPos = xmldoc.getText().indexOf(mapperStr) + mapperStr.length();
-                String columnList = "\n" + FragmentGenUtils.createXmlColumnList(MapperUtil.createMapperXmlColumnListEntity(columns)) + "\n";
-                xmldoc.insertString(insertPos, columnList);
-            }
-        }
-
-        if (resultMapElement == null) {
-            if (entityFullName == null || !entityFullName.contains(".")) {
-                throw new RuntimeException( "please add '/** @entity entityFullName */' in doc comment.");
-            }
-
-            String[] lines = xmldoc.getText().split("\n");
-            String mapperStr = PatternUtil.getFirstMatch(Arrays.asList(lines), Pattern.compile("(<mapper.*>)"));
-            if (mapperStr!=null) {
-                int insertPos = xmldoc.getText().indexOf(mapperStr) + mapperStr.length();
-                String resultMap = "\n" + FragmentGenUtils.createXmlResultMap(MapperUtil.createMapperXmlResultMapEntity(entityFullName, columns)) + "\n";
-                xmldoc.insertString(insertPos, resultMap);
-            }
-        }
-
-        PsiDocumentUtils.commitAndSaveDocument(psiDocumentManager, xmldoc);
-    }
-
 
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement element) {

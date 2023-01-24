@@ -11,21 +11,26 @@ import com.beyond.gen.freemarker.JavaEntity;
 import com.beyond.generator.Column;
 import com.beyond.generator.PathUtils;
 import com.beyond.generator.PluginUtils;
+import com.beyond.generator.dom.IdDomElement;
+import com.beyond.generator.dom.Mapper;
 import com.beyond.generator.ui.EntityNameForm;
 import com.beyond.generator.ui.JdbcForm;
 import com.beyond.generator.ui.SQLForm;
 import com.beyond.generator.utils.MapperUtil;
 import com.beyond.generator.utils.MybatisToSqlUtils;
+import com.beyond.generator.utils.PerformanceUtil;
 import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiElementUtil;
 import com.beyond.generator.utils.PsiFileUtil;
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.codeInspection.util.IntentionFamilyName;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
+import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDocumentManager;
@@ -62,6 +67,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,7 +80,13 @@ import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
  * @author chenshipeng
  * @date 2022/11/08
  */
-public class GenerateMybatisFragmentFromSQLAction extends PsiElementBaseIntentionAction {
+public class GenerateMybatisFragmentFromSQLAction extends GenerateMyBatisBaseAction {
+
+    @Override
+    public boolean startInWriteAction() {
+        return false;
+    }
+
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
 
@@ -104,17 +116,21 @@ public class GenerateMybatisFragmentFromSQLAction extends PsiElementBaseIntentio
                             form.close(OK_EXIT_CODE);
                         });
                         if (entityNameForm.isOk()){
-                            String sql = sqlForm.getData().get("sql");
-                            String packageName = entityNameForm.getData().get("packageName");
-                            String entityName = entityNameForm.getData().get("entityName");
-                            gen2(project, psiDocumentManager, classDocument, psiClass, methodName, sql, packageName, entityName);
+                            WriteCommandAction.runWriteCommandAction(project, (ThrowableComputable<Object, Exception>) () -> {
+                                String sql = sqlForm.getData().get("sql");
+                                String packageName = entityNameForm.getData().get("packageName");
+                                String entityName = entityNameForm.getData().get("entityName");
+                                gen2(project, psiDocumentManager, classDocument, psiClass, methodName, sql, packageName, entityName);
+                                return null;
+                            });
+                            msgDialog(project, "Success!");
                         }
                     }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            msg(project, e.getMessage());
+            msgDialog(project, e.getMessage());
         }
     }
 
@@ -166,13 +182,8 @@ public class GenerateMybatisFragmentFromSQLAction extends PsiElementBaseIntentio
         generateEntity(project, false, packageName, entityName, propertyNames);
 
 
-        boolean isContinue = genMapperXmlFragment(project, psiDocumentManager, containingClass, methodName, replacedSql, resultType);
-        if (isContinue) {
-            isContinue = genMapperFragment2(project, psiDocumentManager, document, containingClass, methodName, entityName, resultType, mybatisSql);
-            if (isContinue) {
-                msg(project, "Success!");
-            }
-        }
+        genMapperXmlFragment(project, psiDocumentManager, containingClass, methodName, replacedSql, resultType);
+        genMapperFragment2(project, psiDocumentManager, document, containingClass, methodName, entityName, resultType, mybatisSql);
     }
 
     Pattern pattern = Pattern.compile("select(.*?)from", Pattern.CASE_INSENSITIVE|Pattern.MULTILINE|Pattern.DOTALL);
@@ -360,18 +371,14 @@ public class GenerateMybatisFragmentFromSQLAction extends PsiElementBaseIntentio
     private boolean genMapperXmlFragment(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, String methodName, String sql, String resultType) throws JDOMException, IOException {
 
         String qualifiedName = mapperClass.getQualifiedName();
-        VirtualFile mapperXmlFile = findMapperXmlByName(qualifiedName, ProjectUtil.guessProjectDir(project));
+        Mapper mapper = findMapperXmlByName(project, qualifiedName);
+        VirtualFile mapperXmlFile = toVirtualFile(mapper);
 
+        if (mapperXmlFile == null) return false;
         Document xmldoc = FileDocumentManager.getInstance().getDocument(mapperXmlFile);
         if (xmldoc != null) {
-            SAXBuilder sb = new SAXBuilder();
-            StringReader xmlStringReader = new StringReader(xmldoc.getText());
-            org.jdom.Document doc = sb.build(xmlStringReader);
-            Element root = doc.getRootElement();
-
-            Element select = getElementByNameAndAttr(root, "//mapper/select", "id", methodName);
-
-            if (select == null) {
+            Optional<IdDomElement> selectOptional = mapper.getSelects().stream().filter(x -> StringUtils.equals(x.getId().getValue(), methodName)).findFirst();
+            if (!selectOptional.isPresent()){
                 int insertPos = xmldoc.getText().indexOf("</mapper>");
                 String sqlStr = "\n" + FragmentGenUtils.createXmlFragmentFromSql(sql, methodName, resultType) + "\n";
                 xmldoc.insertString(insertPos, sqlStr);

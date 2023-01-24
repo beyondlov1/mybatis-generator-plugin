@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.beyond.plugin.mybatis.generator</id>
   <name>Mybatis-Generator</name>
-  <version>1.3.1</version>
+  <version>1.3.2</version>
   <vendor email="support@beyond.com" url="http://www.beyond.com">Beyond</vendor>
 
   <description>
@@ -18,8 +18,7 @@
   </description>
 
   <change-notes>
-    - fix bugs
-    - update mysql driver to 8.0.31
+    - optimize performance
   </change-notes>
 
   <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
@@ -33,6 +32,11 @@
 
 
   <extensions defaultExtensionNs="com.intellij">
+
+    <dom.fileMetaData id="beyond.MapperDescription"
+                      rootTagName="mapper"
+                      implementation="com.beyond.generator.dom.MapperDescription"/>
+
     <!-- Add your extensions here -->
     <intentionAction>
       <className>com.beyond.generator.action.GenerateMybatisFragmentAction</className>
