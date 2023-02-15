@@ -33,13 +33,13 @@
 
   <extensions defaultExtensionNs="com.intellij">
 
-<!--    <dom.fileMetaData id="beyond.MapperDescription"-->
-<!--                      rootTagName="mapper"-->
-<!--                      implementation="com.baomidou.plugin.idea.mybatisx.dom.model.MapperDescription"/>-->
+    <dom.fileMetaData id="beyond.MapperDescription"
+                      rootTagName="mapper"
+                      implementation="com.beyond.generator.dom.MapperDescription"/>
 
-    <dom.fileMetaData id="baomidou.MapperDescription"
-                        rootTagName="mapper"
-                        implementation="com.baomidou.plugin.idea.mybatisx.dom.description.MapperDescription"/>
+<!--    <dom.fileMetaData id="baomidou.MapperDescription"-->
+<!--                        rootTagName="mapper"-->
+<!--                        implementation="com.baomidou.plugin.idea.mybatisx.dom.description.MapperDescription"/>-->
 
     <!-- Add your extensions here -->
     <intentionAction>
