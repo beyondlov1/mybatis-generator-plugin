@@ -5,10 +5,8 @@ import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.expr.SQLPropertyExpr;
 import com.alibaba.druid.sql.ast.statement.SQLSelectItem;
 import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
-import com.alibaba.druid.sql.parser.ParserException;
 import com.beyond.gen.freemarker.FragmentGenUtils;
 import com.beyond.gen.freemarker.JavaEntity;
-import com.beyond.generator.Column;
 import com.beyond.generator.PathUtils;
 import com.beyond.generator.PluginUtils;
 import com.beyond.generator.dom.IdDomElement;
@@ -44,24 +42,14 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiPackageStatement;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
-import com.intellij.psi.javadoc.PsiDocComment;
-import com.intellij.psi.javadoc.PsiDocTag;
-import com.intellij.psi.javadoc.PsiDocTagValue;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.IncorrectOperationException;
-import com.intellij.util.PatternUtil;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jdom.Element;
 import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -72,7 +60,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.beyond.generator.utils.MapperUtil.*;
-import static com.beyond.generator.utils.PropertyUtil.*;
 import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
 
 /**
@@ -296,6 +283,7 @@ public class GenerateMybatisFragmentFromSQLAction extends GenerateMyBatisBaseAct
 
     private static Pattern mybatisForeachPattern = Pattern.compile("<foreach.*?collection.*?=.*?\"(.*?)\".*?>.*?</foreach>", Pattern.MULTILINE|Pattern.DOTALL);
     private static Pattern mybatisVarPattern = Pattern.compile("\\#\\{(.*?)\\}");
+    private static Pattern mybatisVar2Pattern = Pattern.compile("\\#(\\w+)");
 
     private boolean genMapperFragment2(Project project, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName, String entityName, String fullEntityName, String mybatisSql) {
 
@@ -315,6 +303,13 @@ public class GenerateMybatisFragmentFromSQLAction extends GenerateMyBatisBaseAct
         while (matcher.find()){
             fields.add(matcher.group(1));
         }
+
+        // 提取 #xxx
+        Matcher matcher2 = mybatisVar2Pattern.matcher(mybatisSqlForExtract);
+        while (matcher2.find()){
+            fields.add(matcher2.group(1));
+        }
+
 
         int start = document.getText().lastIndexOf("}");
         String paramFragment = String.format("(%s)", FragmentGenUtils.generateParams(fields));

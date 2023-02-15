@@ -9,13 +9,11 @@ import com.beyond.generator.utils.MapperUtil;
 import com.beyond.generator.utils.PerformanceUtil;
 import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiElementUtil;
-import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDocumentManager;
@@ -33,27 +31,14 @@ import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.javadoc.PsiDocTagValue;
 import com.intellij.util.IncorrectOperationException;
-import com.intellij.util.PatternUtil;
-import com.mysql.cj.jdbc.MysqlDataSource;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jdom.Element;
 import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 import static com.beyond.generator.utils.MapperUtil.*;
-import static com.beyond.generator.utils.PropertyUtil.*;
-import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
 
 /**
  * generate mybatis fragment

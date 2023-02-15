@@ -33,9 +33,13 @@
 
   <extensions defaultExtensionNs="com.intellij">
 
-    <dom.fileMetaData id="beyond.MapperDescription"
-                      rootTagName="mapper"
-                      implementation="com.beyond.generator.dom.MapperDescription"/>
+<!--    <dom.fileMetaData id="beyond.MapperDescription"-->
+<!--                      rootTagName="mapper"-->
+<!--                      implementation="com.baomidou.plugin.idea.mybatisx.dom.model.MapperDescription"/>-->
+
+    <dom.fileMetaData id="baomidou.MapperDescription"
+                        rootTagName="mapper"
+                        implementation="com.baomidou.plugin.idea.mybatisx.dom.description.MapperDescription"/>
 
     <!-- Add your extensions here -->
     <intentionAction>
@@ -61,6 +65,9 @@
     <intentionAction>
       <className>com.beyond.generator.action.MyBatisSql2EntityAction</className>
     </intentionAction>
+
+    <defaultLiveTemplates id="beyond.SqlLiveTemplateProvider"
+                          file="liveTemplates/sql"/>
   </extensions>
 
 

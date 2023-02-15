@@ -15,9 +15,4 @@ public class MapperDescription extends DomFileDescription<Mapper> {
     public MapperDescription() {
         super(Mapper.class, "mapper");
     }
-
-    @Override
-    protected void initializeFileDescription() {
-        registerNamespacePolicy("MybatisXml", "http://mybatis.org/dtd/mybatis-3-mapper.dtd");
-    }
 }

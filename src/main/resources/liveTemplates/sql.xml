@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templateSet group="Mybatis/SQL">
+     <template resource-bundle="messages.CodeInsightBundle" key="livetemplate.description.surround.cdata.in.xmlorhtmlorjsp"
+               name="CD" toReformat="false" toShortenFQNames="false" value="&lt;![CDATA[&#10;$SELECTION$&#10;]]&gt;">
+        <variable name="SELECTION" expression="" defaultValue="" alwaysStopAt="false" />
+        <context>
+            <option name="SQL" value="true" />
+        </context>
+    </template>
+
+    <template name="for" toReformat="false" toShortenFQNames="false" value="&lt;foreach collection=&quot;$VAR$&quot; item=&quot;item&quot; open=&quot;(&quot; close=&quot;)&quot; separator=&quot;,&quot;&gt;&#10;#{item}&#10;&lt;/foreach&gt;$END$">
+        <variable name="VAR" expression="suggestVariableName()" defaultValue="list" alwaysStopAt="false" />
+        <context>
+            <option name="SQL" value="true" />
+        </context>
+    </template>
+
+
+     <template name="if" toReformat="false" toShortenFQNames="false" value="&lt;if test=&quot;$VAR$ != null&quot;&gt;&#10;$END$&#10;&lt;/if&gt;">
+        <variable name="VAR" expression="suggestVariableName()" defaultValue="" alwaysStopAt="false" />
+        <context>
+            <option name="SQL" value="true" />
+        </context>
+    </template>
+</templateSet>

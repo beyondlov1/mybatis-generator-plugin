@@ -22,14 +22,19 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.PsiJavaParserFacadeImpl;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
+import com.intellij.psi.xml.XmlFile;
 import com.intellij.util.xml.DomFileElement;
+import com.intellij.util.xml.DomManager;
 import com.intellij.util.xml.DomService;
 import com.intellij.util.xml.GenericAttributeValue;
+import com.intellij.util.xml.impl.DomManagerImpl;
 import com.mysql.cj.jdbc.MysqlDataSource;
 import org.apache.commons.lang.ArrayUtils;
 import org.jdom.Attribute;
@@ -43,6 +48,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,13 +117,33 @@ public class MapperUtil {
 
     public static Mapper findMapperXmlByName(Project project, String mapperFullName) {
         GlobalSearchScope scope = GlobalSearchScope.allScope(project);
-        List<DomFileElement<Mapper>> elements = DomService.getInstance().getFileElements(Mapper.class, project, scope);
-        List<Mapper> mappers = elements.stream().map(DomFileElement::getRootElement).collect(Collectors.toList());
-        for (Mapper mapper : mappers) {
-            GenericAttributeValue<String> namespace = mapper.getNamespace();
-            if (namespace.getValue() != null && org.apache.commons.lang3.StringUtils.equals(namespace.getValue(), mapperFullName)) {
-                return mapper;
+        DomManager domManager = new DomManagerImpl(project);
+        VirtualFile root = ProjectUtil.guessProjectDir(project);
+        List<VirtualFile> xmlFiles = new ArrayList<>();
+        VfsUtilCore.visitChildrenRecursively(root, new VirtualFileVisitor<Object>() {
+            @Override
+            public boolean visitFile(@NotNull VirtualFile file) {
+                if (file.isDirectory()) return super.visitFile(file);
+                String extension = file.getExtension();
+                if (org.apache.commons.lang3.StringUtils.equals(extension, "xml")) {
+                    xmlFiles.add(file);
+                }
+                return super.visitFile(file);
             }
+        });
+
+        for (VirtualFile xmlFile : xmlFiles) {
+            PsiFile file = PsiManager.getInstance(project).findFile(xmlFile);
+            if (file instanceof XmlFile) {
+                DomFileElement<Mapper> domFileElement = domManager.getFileElement((XmlFile) file, Mapper.class);
+                if (domFileElement != null) {
+                    Mapper rootElement = domFileElement.getRootElement();
+                    if (org.apache.commons.lang3.StringUtils.equals(rootElement.getNamespace().getValue(), mapperFullName)){
+                        return rootElement;
+                    }
+                }
+            }
+
         }
         return null;
     }
