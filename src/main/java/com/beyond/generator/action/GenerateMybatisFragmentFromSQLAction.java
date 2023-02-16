@@ -11,6 +11,7 @@ import com.beyond.generator.PathUtils;
 import com.beyond.generator.PluginUtils;
 import com.beyond.generator.dom.IdDomElement;
 import com.beyond.generator.dom.Mapper;
+import com.beyond.generator.dom.MapperLite;
 import com.beyond.generator.ui.EntityNameForm;
 import com.beyond.generator.ui.JdbcForm;
 import com.beyond.generator.ui.SQLForm;
@@ -366,13 +367,13 @@ public class GenerateMybatisFragmentFromSQLAction extends GenerateMyBatisBaseAct
     private boolean genMapperXmlFragment(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, String methodName, String sql, String resultType) throws JDOMException, IOException {
 
         String qualifiedName = mapperClass.getQualifiedName();
-        Mapper mapper = findMapperXmlByName(project, qualifiedName);
+        MapperLite mapper = findMapperXmlByName(project, qualifiedName);
         VirtualFile mapperXmlFile = toVirtualFile(mapper);
 
         if (mapperXmlFile == null) return false;
         Document xmldoc = FileDocumentManager.getInstance().getDocument(mapperXmlFile);
         if (xmldoc != null) {
-            Optional<IdDomElement> selectOptional = mapper.getSelects().stream().filter(x -> StringUtils.equals(x.getId().getValue(), methodName)).findFirst();
+            Optional<String> selectOptional = mapper.getSelectIds().stream().filter(x -> StringUtils.equals(x, methodName)).findFirst();
             if (!selectOptional.isPresent()){
                 int insertPos = xmldoc.getText().indexOf("</mapper>");
                 String sqlStr = "\n" + FragmentGenUtils.createXmlFragmentFromSql(sql, methodName, resultType) + "\n";

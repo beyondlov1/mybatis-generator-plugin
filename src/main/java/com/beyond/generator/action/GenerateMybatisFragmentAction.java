@@ -4,6 +4,7 @@ import com.beyond.gen.freemarker.FragmentGenUtils;
 import com.beyond.generator.Column;
 import com.beyond.generator.dom.IdDomElement;
 import com.beyond.generator.dom.Mapper;
+import com.beyond.generator.dom.MapperLite;
 import com.beyond.generator.ui.JdbcForm;
 import com.beyond.generator.utils.MapperUtil;
 import com.beyond.generator.utils.PerformanceUtil;
@@ -42,6 +43,7 @@ import static com.beyond.generator.utils.MapperUtil.*;
 
 /**
  * generate mybatis fragment
+ *
  * @author chenshipeng
  * @date 2022/11/08
  */
@@ -255,7 +257,7 @@ public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
 
         String qualifiedName = mapperClass.getQualifiedName();
         PerformanceUtil.mark("genMapperXmlFragment_1");
-        Mapper mapper = findMapperXmlByName(project, qualifiedName);
+        MapperLite mapper = findMapperXmlByName(project, qualifiedName);
         VirtualFile mapperXmlFile = toVirtualFile(mapper);
         PerformanceUtil.mark("genMapperXmlFragment_2");
 
@@ -291,8 +293,8 @@ public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
 
             // Base_Column_List and ResultMap
             PerformanceUtil.mark("genMapperXmlFragment_5");
-            Optional<IdDomElement> sqlOptional = mapper.getSqls().stream().filter(x -> StringUtils.equals(x.getId().getValue(), "Base_Column_List")).findFirst();
-            Optional<IdDomElement> resultMapOptional = mapper.getResultMaps().stream().filter(x -> StringUtils.equals(x.getId().getValue(), "BaseResultMap")).findFirst();
+            Optional<String> sqlOptional = mapper.getSqlIds().stream().filter(x -> StringUtils.equals(x, "Base_Column_List")).findFirst();
+            Optional<String> resultMapOptional = mapper.getResultMapIds().stream().filter(x -> StringUtils.equals(x, "BaseResultMap")).findFirst();
 
             boolean isContinue = createXmlResultMapAndColumnList(project, psiDocumentManager, tableName, entityFullName, xmldoc, sqlOptional.isPresent(), resultMapOptional.isPresent());
             PerformanceUtil.mark("genMapperXmlFragment_6");
@@ -301,10 +303,10 @@ public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
             }
 
             PerformanceUtil.mark("genMapperXmlFragment_7");
-            Optional<IdDomElement> selectOptional = mapper.getSelects().stream().filter(x -> StringUtils.equals(x.getId().getValue(), methodName)).findFirst();
+            Optional<String> selectOptional = mapper.getSqlIds().stream().filter(x -> StringUtils.equals(x, methodName)).findFirst();
             PerformanceUtil.mark("genMapperXmlFragment_8");
 
-            if (!selectOptional.isPresent()){
+            if (!selectOptional.isPresent()) {
                 int insertPos = xmldoc.getText().indexOf("</mapper>");
                 PerformanceUtil.mark("genMapperXmlFragment_9");
                 String sql = "\n" + FragmentGenUtils.createXmlFragment(methodName, tableName) + "\n";
@@ -321,11 +323,10 @@ public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
     }
 
 
-
     @Override
     public boolean isAvailable(@NotNull Project project, Editor editor, @NotNull PsiElement element) {
         PsiClass containingClass = PsiElementUtil.getContainingClass(element);
-        if(containingClass == null) return false;
+        if (containingClass == null) return false;
         String methodName = getPrevWord(editor.getDocument(), editor);
         if (StringUtils.isNotBlank(methodName) && methodName.startsWith("get") && containingClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null) {
             return true;

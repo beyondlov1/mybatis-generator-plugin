@@ -7,6 +7,7 @@ import com.beyond.generator.Column;
 import com.beyond.generator.StringUtils;
 import com.beyond.generator.TypeConverter;
 import com.beyond.generator.dom.Mapper;
+import com.beyond.generator.dom.MapperLite;
 import com.beyond.generator.ui.MsgDialog;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
@@ -40,6 +41,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.jdom.Attribute;
 import org.jdom.Element;
 import org.jdom.JDOMException;
+import org.jdom.Namespace;
 import org.jdom.input.SAXBuilder;
 import org.jdom.xpath.XPath;
 import org.jetbrains.annotations.NotNull;
@@ -115,35 +117,20 @@ public class MapperUtil {
         return createMapperXmlEntity((String) null, (String) null, columns);
     }
 
-    public static Mapper findMapperXmlByName(Project project, String mapperFullName) {
+
+    public static MapperLite findMapperXmlByName(Project project, String mapperFullName) {
+        return findMapperXmlByName3(project, mapperFullName);
+    }
+
+    private static Mapper findMapperXmlByName1(Project project, String mapperFullName) {
         GlobalSearchScope scope = GlobalSearchScope.allScope(project);
-        DomManager domManager = new DomManagerImpl(project);
-        VirtualFile root = ProjectUtil.guessProjectDir(project);
-        List<VirtualFile> xmlFiles = new ArrayList<>();
-        VfsUtilCore.visitChildrenRecursively(root, new VirtualFileVisitor<Object>() {
-            @Override
-            public boolean visitFile(@NotNull VirtualFile file) {
-                if (file.isDirectory()) return super.visitFile(file);
-                String extension = file.getExtension();
-                if (org.apache.commons.lang3.StringUtils.equals(extension, "xml")) {
-                    xmlFiles.add(file);
-                }
-                return super.visitFile(file);
+        List<DomFileElement<Mapper>> elements = DomService.getInstance().getFileElements(Mapper.class, project, scope);
+        List<Mapper> mappers = elements.stream().map(DomFileElement::getRootElement).collect(Collectors.toList());
+        for (Mapper mapper : mappers) {
+            GenericAttributeValue<String> namespace = mapper.getNamespace();
+            if (namespace.getValue() != null && org.apache.commons.lang3.StringUtils.equals(namespace.getStringValue(), mapperFullName)) {
+                return mapper;
             }
-        });
-
-        for (VirtualFile xmlFile : xmlFiles) {
-            PsiFile file = PsiManager.getInstance(project).findFile(xmlFile);
-            if (file instanceof XmlFile) {
-                DomFileElement<Mapper> domFileElement = domManager.getFileElement((XmlFile) file, Mapper.class);
-                if (domFileElement != null) {
-                    Mapper rootElement = domFileElement.getRootElement();
-                    if (org.apache.commons.lang3.StringUtils.equals(rootElement.getNamespace().getValue(), mapperFullName)){
-                        return rootElement;
-                    }
-                }
-            }
-
         }
         return null;
     }
@@ -154,6 +141,11 @@ public class MapperUtil {
         } else {
             return null;
         }
+    }
+
+    public static VirtualFile toVirtualFile(MapperLite mapper) {
+        if (mapper == null) return null;
+        return mapper.getVirtualFile();
     }
 
     private static Map<String, VirtualFile> mapper2xmlMap = new HashMap<>();
@@ -212,6 +204,68 @@ public class MapperUtil {
         }
         return found[0];
     }
+
+    private static Map<String, MapperLite> mapperName2MapperMap = new HashMap<>();
+
+    public static MapperLite findMapperXmlByName3(Project project, String mapperFullName) {
+        MapperLite xmlPath = mapperName2MapperMap.get(mapperFullName);
+        if (xmlPath != null) {
+            return xmlPath;
+        }
+
+        VirtualFile root = ProjectUtil.guessProjectDir(project);
+        VirtualFile projectDir = root;
+        if (root != null) {
+            root = root.findFileByRelativePath("src/main");
+        }
+        if (root == null) root = projectDir;
+
+        final MapperLite[] found = {null};
+        FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+        SAXBuilder sb = new SAXBuilder();
+        VfsUtilCore.visitChildrenRecursively(root, new VirtualFileVisitor<Object>() {
+            @Override
+            public boolean visitFile(@NotNull VirtualFile file) {
+                if (file.isDirectory()) return super.visitFile(file);
+                if (found[0] != null) return false;
+                String extension = file.getExtension();
+                if (org.apache.commons.lang3.StringUtils.equals(extension, "xml")) {
+                    Document xmldoc = fileDocumentManager.getDocument(file);
+                    if (xmldoc != null) {
+                        final String text = xmldoc.getText();
+                        if (!text.contains(mapperFullName)) return false;
+                        try (StringReader stringReader = new StringReader(text)) {
+                            org.jdom.Document doc = sb.build(stringReader);
+                            Element root = doc.getRootElement();
+                            Attribute namespace = root.getAttribute("namespace");
+                            String namespacestr = namespace == null ? null:  namespace.getValue();
+                            if (org.apache.commons.lang3.StringUtils.equals(namespacestr, mapperFullName)) {
+                                List<Element> selects = root.getChildren("select");
+                                List<Element> resultMaps = root.getChildren("resultMap");
+                                List<Element> sqls = root.getChildren("sql");
+                                MapperLite mapper = new MapperLite();
+                                mapper.setGetNamespace(namespacestr);
+                                mapper.setSelectIds(selects.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
+                                mapper.setResultMapIds(resultMaps.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
+                                mapper.setSqlIds(sqls.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
+                                mapper.setVirtualFile(file);
+                                found[0] = mapper;
+                                return false;
+                            }
+                        } catch (IOException | JDOMException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                return super.visitFile(file);
+            }
+        });
+        if (found[0] != null) {
+            mapperName2MapperMap.put(mapperFullName, found[0]);
+        }
+        return found[0];
+    }
+
 
 
     @Nullable

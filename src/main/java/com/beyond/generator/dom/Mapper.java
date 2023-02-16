@@ -1,5 +1,6 @@
 package com.beyond.generator.dom;
 
+import com.intellij.psi.PsiClass;
 import com.intellij.util.xml.Attribute;
 import com.intellij.util.xml.DomElement;
 import com.intellij.util.xml.GenericAttributeValue;

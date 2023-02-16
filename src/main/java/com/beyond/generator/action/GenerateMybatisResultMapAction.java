@@ -4,6 +4,7 @@ import com.beyond.gen.freemarker.FragmentGenUtils;
 import com.beyond.generator.Column;
 import com.beyond.generator.dom.IdDomElement;
 import com.beyond.generator.dom.Mapper;
+import com.beyond.generator.dom.MapperLite;
 import com.beyond.generator.ui.JdbcForm;
 import com.beyond.generator.ui.MsgDialog;
 import com.beyond.generator.utils.MapperUtil;
@@ -114,7 +115,7 @@ public class GenerateMybatisResultMapAction extends GenerateMyBatisBaseAction {
     private boolean genMapperXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment) throws JDOMException, IOException {
 
         String qualifiedName = mapperClass.getQualifiedName();
-        Mapper mapper = findMapperXmlByName(project, qualifiedName);
+        MapperLite mapper = findMapperXmlByName(project, qualifiedName);
         VirtualFile mapperXmlFile = toVirtualFile(mapper);
 
         String tableFullName = null;
@@ -142,8 +143,8 @@ public class GenerateMybatisResultMapAction extends GenerateMyBatisBaseAction {
         Document xmldoc = FileDocumentManager.getInstance().getDocument(mapperXmlFile);
         if (xmldoc != null) {
             // Base_Column_List and ResultMap
-            Optional<IdDomElement> sqlOptional = mapper.getSqls().stream().filter(x -> StringUtils.equals(x.getId().getValue(), "Base_Column_List")).findFirst();
-            Optional<IdDomElement> resultMapOptional = mapper.getResultMaps().stream().filter(x -> StringUtils.equals(x.getId().getValue(), "BaseResultMap")).findFirst();
+            Optional<String> sqlOptional = mapper.getSqlIds().stream().filter(x -> StringUtils.equals(x, "Base_Column_List")).findFirst();
+            Optional<String> resultMapOptional = mapper.getResultMapIds().stream().filter(x -> StringUtils.equals(x, "BaseResultMap")).findFirst();
 
             boolean isContinue = createXmlResultMapAndColumnList(project, psiDocumentManager, tableFullName, entityFullName, xmldoc, sqlOptional.isPresent(), resultMapOptional.isPresent());
             if (!isContinue) {
