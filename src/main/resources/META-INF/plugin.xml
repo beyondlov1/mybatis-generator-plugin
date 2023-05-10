@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.beyond.plugin.mybatis.generator</id>
   <name>Mybatis-Generator</name>
-  <version>1.3.3</version>
+  <version>1.3.4</version>
   <vendor email="support@beyond.com" url="http://www.beyond.com">Beyond</vendor>
 
   <description>
@@ -18,7 +18,7 @@
   </description>
 
   <change-notes>
-    - fix bugs
+    - quick add field in Spring Service or Controller
   </change-notes>
 
   <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
@@ -56,6 +56,10 @@
 
     <intentionAction>
       <className>com.beyond.generator.action.MyBatisSql2EntityAction</className>
+    </intentionAction>
+
+    <intentionAction>
+      <className>com.beyond.generator.action.SpringAutoFieldAction</className>
     </intentionAction>
 
   </extensions>
