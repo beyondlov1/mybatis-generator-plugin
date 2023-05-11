@@ -11,10 +11,13 @@ import java.util.List;
  */
 public class MapperLite {
     private VirtualFile virtualFile;
-    private String getNamespace;
+    private String namespace;
     private List<String> selectIds;
+    private List<String>  insertIds;
+    private List<String>  updateIds;
     private List<String> resultMapIds;
     private List<String> sqlIds;
+    private String text;
 
     public VirtualFile getVirtualFile() {
         return virtualFile;
@@ -24,12 +27,12 @@ public class MapperLite {
         this.virtualFile = virtualFile;
     }
 
-    public String getGetNamespace() {
-        return getNamespace;
+    public String getNamespace() {
+        return namespace;
     }
 
-    public void setGetNamespace(String getNamespace) {
-        this.getNamespace = getNamespace;
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
 
     public List<String> getSelectIds() {
@@ -54,5 +57,29 @@ public class MapperLite {
 
     public void setSqlIds(List<String> sqlIds) {
         this.sqlIds = sqlIds;
+    }
+
+    public List<String> getInsertIds() {
+        return insertIds;
+    }
+
+    public void setInsertIds(List<String> insertIds) {
+        this.insertIds = insertIds;
+    }
+
+    public List<String> getUpdateIds() {
+        return updateIds;
+    }
+
+    public void setUpdateIds(List<String> updateIds) {
+        this.updateIds = updateIds;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
     }
 }

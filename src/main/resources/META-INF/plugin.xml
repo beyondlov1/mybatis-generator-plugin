@@ -70,6 +70,9 @@
       <add-to-group group-id="MainMenu" anchor="last"/>
     </group>
     <!-- Add your actions here -->
+    <action id="myBatisPatternAction" class="com.beyond.generator.action.MyBatisSqlPatternAction" text="MyBatis Pattern">
+      <add-to-group group-id="CustomGroup" anchor="first"/>
+    </action>
     <action id="generateMyBatisAction" class="com.beyond.generator.GenerateAction" text="Generate Mybatis File">
       <add-to-group group-id="CustomGroup" anchor="first"/>
     </action>

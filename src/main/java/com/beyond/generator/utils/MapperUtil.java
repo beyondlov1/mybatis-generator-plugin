@@ -9,6 +9,10 @@ import com.beyond.generator.TypeConverter;
 import com.beyond.generator.dom.Mapper;
 import com.beyond.generator.dom.MapperLite;
 import com.beyond.generator.ui.MsgDialog;
+import com.intellij.lang.jvm.annotation.JvmAnnotationArrayValue;
+import com.intellij.lang.jvm.annotation.JvmAnnotationAttribute;
+import com.intellij.lang.jvm.annotation.JvmAnnotationAttributeValue;
+import com.intellij.lang.jvm.annotation.JvmAnnotationConstantValue;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
@@ -21,27 +25,26 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
+import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiDocCommentOwner;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
+import com.intellij.psi.PsiMethod;
 import com.intellij.psi.impl.PsiJavaParserFacadeImpl;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
-import com.intellij.psi.xml.XmlFile;
+import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.xml.DomFileElement;
-import com.intellij.util.xml.DomManager;
 import com.intellij.util.xml.DomService;
 import com.intellij.util.xml.GenericAttributeValue;
-import com.intellij.util.xml.impl.DomManagerImpl;
 import com.mysql.cj.jdbc.MysqlDataSource;
 import org.apache.commons.lang.ArrayUtils;
 import org.jdom.Attribute;
 import org.jdom.Element;
 import org.jdom.JDOMException;
-import org.jdom.Namespace;
 import org.jdom.input.SAXBuilder;
 import org.jdom.xpath.XPath;
 import org.jetbrains.annotations.NotNull;
@@ -51,6 +54,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -244,7 +248,7 @@ public class MapperUtil {
                                 List<Element> resultMaps = root.getChildren("resultMap");
                                 List<Element> sqls = root.getChildren("sql");
                                 MapperLite mapper = new MapperLite();
-                                mapper.setGetNamespace(namespacestr);
+                                mapper.setNamespace(namespacestr);
                                 mapper.setSelectIds(selects.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
                                 mapper.setResultMapIds(resultMaps.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
                                 mapper.setSqlIds(sqls.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
@@ -267,6 +271,60 @@ public class MapperUtil {
     }
 
 
+    public static List<MapperLite> findAllMapperXml(Project project){
+        List<MapperLite> result = new ArrayList<>();
+
+        VirtualFile root = ProjectUtil.guessProjectDir(project);
+        VirtualFile projectDir = root;
+        if (root != null) {
+            root = root.findFileByRelativePath("src/main");
+        }
+        if (root == null) root = projectDir;
+
+        FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+        SAXBuilder sb = new SAXBuilder();
+        VfsUtilCore.visitChildrenRecursively(root, new VirtualFileVisitor<Object>() {
+            @Override
+            public boolean visitFile(@NotNull VirtualFile file) {
+                if (file.isDirectory()) return super.visitFile(file);
+                String extension = file.getExtension();
+                if (org.apache.commons.lang3.StringUtils.equals(extension, "xml")) {
+                    Document xmldoc = fileDocumentManager.getDocument(file);
+                    if (xmldoc != null) {
+                        final String text = xmldoc.getText();
+                        try (StringReader stringReader = new StringReader(text)) {
+                            org.jdom.Document doc = sb.build(stringReader);
+                            Element root = doc.getRootElement();
+                            Attribute namespace = root.getAttribute("namespace");
+                            String namespacestr = namespace == null ? null:  namespace.getValue();
+                            if (namespacestr != null) {
+                                List<Element> selects = root.getChildren("select");
+                                List<Element> inserts = root.getChildren("insert");
+                                List<Element> updates = root.getChildren("update");
+                                List<Element> resultMaps = root.getChildren("resultMap");
+                                List<Element> sqls = root.getChildren("sql");
+                                MapperLite mapper = new MapperLite();
+                                mapper.setNamespace(namespacestr);
+                                mapper.setSelectIds(selects.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
+                                mapper.setInsertIds(inserts.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
+                                mapper.setUpdateIds(updates.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
+                                mapper.setResultMapIds(resultMaps.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
+                                mapper.setSqlIds(sqls.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
+                                mapper.setVirtualFile(file);
+                                mapper.setText(text);
+                                result.add(mapper);
+                                return false;
+                            }
+                        } catch (IOException | JDOMException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                return super.visitFile(file);
+            }
+        });
+        return result;
+    }
 
     @Nullable
     public static Element getElementByNameAndAttr(Element root, String xpath, String attr, String attrTarget) throws JDOMException {
@@ -336,7 +394,7 @@ public class MapperUtil {
 
 
     public static boolean isMapperClass(PsiClass psiClass) {
-        return psiClass != null && psiClass.isInterface() && psiClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null;
+        return psiClass != null && psiClass.isInterface() && (psiClass.getAnnotation("org.apache.ibatis.annotations.Mapper") != null || psiClass.getAnnotation("Mapper") != null);
     }
 
 
@@ -363,4 +421,115 @@ public class MapperUtil {
     }
 
 
+    public static String getAnnotationSQL(PsiMethod psiMethod){
+        PsiAnnotation select = psiMethod.getAnnotation("org.apache.ibatis.annotations.Select");
+        if (select == null){
+            select = psiMethod.getAnnotation("Select");
+        }
+        if (select != null) {
+            return getValue(select);
+        }
+        PsiAnnotation update = psiMethod.getAnnotation("org.apache.ibatis.annotations.Update");
+        if (update == null){
+            update = psiMethod.getAnnotation("Update");
+        }
+        if (update != null) {
+            return getValue(update);
+        }
+        PsiAnnotation insert = psiMethod.getAnnotation("org.apache.ibatis.annotations.Insert");
+        if (insert == null){
+            insert = psiMethod.getAnnotation("Insert");
+        }
+        if (insert != null) {
+            return getValue(insert);
+        }
+        return null;
+
+    }
+
+    private static String getValue(PsiAnnotation select) {
+        List<JvmAnnotationAttribute> attributes = select.getAttributes();
+        for (JvmAnnotationAttribute attribute : attributes) {
+            String attributeName = attribute.getAttributeName();
+            if (org.apache.commons.lang.StringUtils.isBlank(attributeName) || org.apache.commons.lang.StringUtils.equalsIgnoreCase(attributeName,"value")){
+                if ( attribute.getAttributeValue() instanceof JvmAnnotationConstantValue) {
+                    return ((JvmAnnotationConstantValue) attribute.getAttributeValue()).getConstantValue().toString();
+                }
+                if ( attribute.getAttributeValue() instanceof JvmAnnotationArrayValue){
+                    List<JvmAnnotationAttributeValue> values = ((JvmAnnotationArrayValue) attribute.getAttributeValue()).getValues();
+                    List<String> ss = new ArrayList<>();
+                    for (JvmAnnotationAttributeValue value : values) {
+                        if (value instanceof JvmAnnotationConstantValue){
+                            ss.add(((JvmAnnotationConstantValue) value).getConstantValue().toString());
+                        }
+                    }
+                    return String.join(" ", ss);
+                }
+            }
+        }
+        return null;
+    }
+
+    public static Map<PsiMethod, String> getAllMapperMethod2Sql(Project project) throws JDOMException, IOException {
+        Map<PsiMethod, String> result = new HashMap<>();
+        List<MapperLite> allMapperXml = findAllMapperXml(project);
+        for (MapperLite mapperLite : allMapperXml) {
+            List<String> ids = new ArrayList<>();
+            ids.addAll(mapperLite.getSelectIds());
+            ids.addAll(mapperLite.getInsertIds());
+            ids.addAll(mapperLite.getUpdateIds());
+            Map<String, String> id2SqlMap = MybatisToSqlUtils.toSqls(mapperLite.getText(), ids);
+            for (String id : id2SqlMap.keySet()) {
+                PsiMethod method = PsiElementUtil.findMethodByFullClassNameAndName(project, mapperLite.getNamespace(), id);
+                result.put(method, id2SqlMap.get(id));
+            }
+        }
+
+        List<PsiClass> allMapperClass = findAllMapperClass(project);
+        for (PsiClass mapperClass : allMapperClass) {
+            @NotNull PsiMethod[] methods = mapperClass.getMethods();
+            for (PsiMethod method : methods) {
+                String annotationSQL = getAnnotationSQL(method);
+                if (annotationSQL != null){
+                    result.put(method, annotationSQL);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public static List<PsiClass> findAllMapperClass(Project project){
+        List<PsiClass> result = new ArrayList<>();
+
+        VirtualFile root = ProjectUtil.guessProjectDir(project);
+        VirtualFile projectDir = root;
+        if (root != null) {
+            root = root.findFileByRelativePath("src/main");
+        }
+        if (root == null) root = projectDir;
+
+        FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+        VfsUtilCore.visitChildrenRecursively(root, new VirtualFileVisitor<Object>() {
+            @Override
+            public boolean visitFile(@NotNull VirtualFile file) {
+                if (file.isDirectory()) return super.visitFile(file);
+                String extension = file.getExtension();
+                if (org.apache.commons.lang3.StringUtils.equals(extension, "java")) {
+                    Document javaDocument = fileDocumentManager.getDocument(file);
+                    if (javaDocument != null) {
+                        PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(javaDocument);
+                        Collection<PsiClass> psiClasses = PsiTreeUtil.findChildrenOfType(psiFile, PsiClass.class);
+                        for (PsiClass psiClass : psiClasses) {
+                            if (isMapperClass(psiClass)){
+                                result.add(psiClass);
+                            }
+                        }
+                    }
+                }
+                return super.visitFile(file);
+            }
+        });
+        return result;
+    }
 }
