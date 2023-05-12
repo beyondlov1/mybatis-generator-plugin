@@ -58,16 +58,20 @@ public class MyBatisSqlPatternAction extends AnAction {
                     patternList.add(p);
                 }
 
+                if (!annotation.contains(".")){
+                    throw new RuntimeException("please use full annotation name");
+                }
+
                 Map<PsiMethod, String> allMapperMethod2Sql = MapperUtil.getAllMapperMethod2Sql(project);
                 WriteCommandAction.writeCommandAction(project).run((ThrowableRunnable<Throwable>) () -> {
                     for (PsiMethod psiMethod : allMapperMethod2Sql.keySet()) {
                         if (psiMethod == null) continue;
                         String sql = allMapperMethod2Sql.get(psiMethod);
                         for (Pattern pattern : patternList) {
-                            Matcher matcher = pattern.matcher(sql.replaceAll("\n", " "));
+                            Matcher matcher = pattern.matcher(sql.replaceAll("\n", " ").replace("`",""));
                             if (matcher.matches()) {
-                                if (psiMethod.getAnnotation(annotation) == null && psiMethod.getAnnotation(StringUtils.substringAfterLast(annotation,".")) == null){
-                                    psiMethod.getModifierList().add(psiJavaParserFacade.createAnnotationFromText(annotation.trim(), psiMethod));
+                                if (psiMethod.getAnnotation(StringUtils.substringAfter(annotation,"@")) == null){
+                                    psiMethod.getModifierList().addBefore(psiJavaParserFacade.createAnnotationFromText(annotation.trim(), psiMethod), psiMethod.getModifierList().getFirstChild());
                                 }
                                 break;
                             }
