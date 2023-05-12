@@ -9,16 +9,19 @@
           mybatis-generator-plugin
           Features:
        <ul>
-          <li>generate mybatis mapper class,mapper xml,entity class</li>
+          <li>generate mybatis mapper class,mapper xml,entity class(GenerateMyBatis->Generate MyBatis File)</li>
           <li>generate mybatis xml fragment and entity class from method name</li>
           <li>generate mybatis xml fragment and entity class from SQL</li>
           <li>convert doc comments to swagger annotations (experimental)</li>
+          <li>one-click add Spring Component field (experimental)</li>
+          <li>add annotation on mapper methods if patterns match the corresponding sql(GenerateMyBatis->MyBatisPattern) (experimental)</li>
       </ul>
       ]]>
   </description>
 
   <change-notes>
     - quick add field in Spring Service or Controller
+    - add annotation on mapper methods if patterns match the corresponding sql
   </change-notes>
 
   <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
