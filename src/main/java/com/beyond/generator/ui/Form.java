@@ -44,4 +44,13 @@ public class Form {
         }
         return data;
     }
+
+    public void setData(Map<String,String> data) {
+        for (FormItem formItem : itemList) {
+            String s = data.get(formItem.getBindName());
+            if (s != null){
+                formItem.setValue(s);
+            }
+        }
+    }
 }

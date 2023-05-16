@@ -65,6 +65,10 @@
       <className>com.beyond.generator.action.SpringAutoFieldAction</className>
     </intentionAction>
 
+    <intentionAction>
+      <className>com.beyond.generator.action.ClassReferenceCollectAction</className>
+    </intentionAction>
+
   </extensions>
 
 

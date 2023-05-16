@@ -93,6 +93,11 @@ public class TextAreaItem implements FormItem {
         return bindName;
     }
 
+    @Override
+    public void setValue(String value) {
+        jTextArea.setText(value);
+    }
+
     public String getLabelText() {
         return labelText;
     }

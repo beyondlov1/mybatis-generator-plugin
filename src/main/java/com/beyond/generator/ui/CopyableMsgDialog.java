@@ -31,9 +31,14 @@ public class CopyableMsgDialog extends DialogWrapper {
         return jPanel;
     }
 
-    public static void show(@Nullable Project project,String message){
+    public static CopyableMsgDialog show(@Nullable Project project,String message){
         CopyableMsgDialog copyableMsgDialog = new CopyableMsgDialog(project, message);
         copyableMsgDialog.show();
+        return copyableMsgDialog;
+    }
+
+    public String getMessage(){
+        return jbTextField.getText();
     }
 
 }

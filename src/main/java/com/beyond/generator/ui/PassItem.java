@@ -93,6 +93,11 @@ public class PassItem implements FormItem {
         return bindName;
     }
 
+    @Override
+    public void setValue(String value) {
+        jTextField.setText(value);
+    }
+
     public String getLabelText() {
         return labelText;
     }

@@ -7,4 +7,6 @@ import java.util.Map;
 public interface FormItem {
     void bind(Map<String,String> map);
     List<JComponent> getJComponents();
+    String getBindName();
+    void setValue(String value);
 }

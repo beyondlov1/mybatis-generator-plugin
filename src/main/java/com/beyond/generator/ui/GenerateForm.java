@@ -1,12 +1,20 @@
 package com.beyond.generator.ui;
 
+import com.alibaba.druid.support.json.JSONUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.BeanUtil;
 import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.openapi.ide.CopyPasteManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.webcore.util.JsonUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.lang.reflect.Type;
 import java.util.Map;
 
 import static com.beyond.generator.utils.PropertyUtil.*;
@@ -29,6 +37,10 @@ public class GenerateForm extends DialogWrapper {
     private TestRunnable testRunnable;
 
     private JButton testButton;
+
+    private JButton exportButton;
+
+    private JButton importButton;
 
     public GenerateForm(@Nullable Project project) {
         super(project);
@@ -84,6 +96,40 @@ public class GenerateForm extends DialogWrapper {
             testRunnable.run();
         });
         this.testButton = testConnectionButton;
+
+        JButton exportButton = new JButton("EXPORT");
+        exportButton.setHorizontalAlignment(SwingConstants.CENTER); //水平居中
+        exportButton.setVerticalAlignment(SwingConstants.CENTER); //垂直居中
+        south.add(exportButton);
+        exportButton.addActionListener(e -> {
+            ObjectMapper objectMapper = new ObjectMapper();
+            String data = null;
+            try {
+                data = objectMapper.writeValueAsString(getData());
+                CopyableMsgDialog.show(project, data);
+            } catch (JsonProcessingException jsonProcessingException) {
+                jsonProcessingException.printStackTrace();
+            }
+        });
+        this.exportButton = exportButton;
+
+        JButton importButton = new JButton("IMPORT");
+        importButton.setHorizontalAlignment(SwingConstants.CENTER); //水平居中
+        importButton.setVerticalAlignment(SwingConstants.CENTER); //垂直居中
+        south.add(importButton);
+        importButton.addActionListener(e -> {
+            CopyableMsgDialog msgd = CopyableMsgDialog.show(project, "");
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                Map<String, String> data = objectMapper.readValue(msgd.getMessage(), new TypeReference<Map<String, String>>() {
+                });
+                form.setData(data);
+            } catch (JsonProcessingException jsonProcessingException) {
+                jsonProcessingException.printStackTrace();
+            }
+        });
+        this.importButton = importButton;
+
         return south;
     }
 
