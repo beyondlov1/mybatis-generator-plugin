@@ -29,6 +29,6 @@ dependencies {
 intellij {
 //    version '2020.2.4'
     updateSinceUntilBuild false
-    localPath = 'C:\\Users\\Administrator\\Downloads\\ideaIU-2020.2.4.win'
+    localPath = '/home/beyond/software/bin/idea-IC-202.8194.7'
     plugins =['java']
 }

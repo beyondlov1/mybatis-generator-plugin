@@ -27,7 +27,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiDocCommentOwner;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMethod;
@@ -210,10 +209,12 @@ public class MapperUtil {
     }
 
     private static Map<String, MapperLite> mapperName2MapperMap = new HashMap<>();
+    private static Map<String, Long> mapperName2MapperTimestampMap = new HashMap<>();
 
     public static MapperLite findMapperXmlByName3(Project project, String mapperFullName) {
         MapperLite xmlPath = mapperName2MapperMap.get(mapperFullName);
-        if (xmlPath != null) {
+        Long time = mapperName2MapperTimestampMap.get(mapperFullName);
+        if (xmlPath != null && System.currentTimeMillis() - time < 10000) {
             return xmlPath;
         }
 
@@ -251,8 +252,10 @@ public class MapperUtil {
                                 mapper.setNamespace(namespacestr);
                                 mapper.setSelectIds(selects.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
                                 mapper.setResultMapIds(resultMaps.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
+                                mapper.setResultMapId2TypeMap(resultMaps.stream().collect(Collectors.toMap(x->x.getAttribute("id").getValue(), x->x.getAttribute("type").getValue())));
                                 mapper.setSqlIds(sqls.stream().map(x->x.getAttribute("id").getValue()).collect(Collectors.toList()));
                                 mapper.setVirtualFile(file);
+                                mapper.setText(text);
                                 found[0] = mapper;
                                 return false;
                             }
@@ -266,6 +269,7 @@ public class MapperUtil {
         });
         if (found[0] != null) {
             mapperName2MapperMap.put(mapperFullName, found[0]);
+            mapperName2MapperTimestampMap.put(mapperFullName, System.currentTimeMillis());
         }
         return found[0];
     }

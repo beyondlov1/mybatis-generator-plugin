@@ -1,15 +1,16 @@
 package com.beyond.generator.action;
 
+import com.alibaba.druid.sql.SQLUtils;
+import com.alibaba.druid.sql.ast.SQLStatement;
+import com.alibaba.druid.sql.ast.statement.SQLExprTableSource;
+import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlASTVisitorAdapter;
 import com.beyond.gen.freemarker.FragmentGenUtils;
-import com.beyond.generator.Column;
-import com.beyond.generator.dom.IdDomElement;
-import com.beyond.generator.dom.Mapper;
 import com.beyond.generator.dom.MapperLite;
-import com.beyond.generator.ui.JdbcForm;
-import com.beyond.generator.utils.MapperUtil;
+import com.beyond.generator.utils.MybatisToSqlUtils;
 import com.beyond.generator.utils.PerformanceUtil;
 import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiElementUtil;
+import com.beyond.generator.utils.diff_match_patch;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -31,13 +32,24 @@ import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.javadoc.PsiDocTagValue;
+import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.IncorrectOperationException;
 import org.apache.commons.lang3.StringUtils;
 import org.jdom.JDOMException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.beyond.generator.utils.MapperUtil.*;
 
@@ -101,7 +113,34 @@ public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
             }
         }
         if (entityName == null) {
-            throw new RuntimeException("please add '/** @entity entityName */' in doc comment.");
+
+            MapperLite mapper = findMapperXmlByName(project, containingClass.getQualifiedName());
+            Map<String, String> resultMapId2TypeMap = mapper.getResultMapId2TypeMap();
+            Collection<String> types = resultMapId2TypeMap.values();
+            entityName = types.stream().findFirst().orElse(null);
+
+            if (entityName == null){
+                List<PsiClass> allDataClass = new ArrayList<>();
+                PsiShortNamesCache psiShortNamesCache = PsiShortNamesCache.getInstance(project);
+                @NotNull String[] allClassNames = psiShortNamesCache.getAllClassNames();
+                for (String allClassName : allClassNames) {
+                    @NotNull PsiClass[] psiClasses = psiShortNamesCache.getClassesByName(allClassName, GlobalSearchScope.projectScope(project));
+                    allDataClass.addAll(Arrays.asList(psiClasses));
+                }
+                allDataClass.removeIf(x -> x.getAnnotation("lombok.Data") == null);
+                PsiClass matched = allDataClass.stream().min(Comparator.comparingInt(x ->{
+                    String name = x.getName();
+                    String target = containingClass.getName();
+                    diff_match_patch diffMatchPatch = new diff_match_patch();
+                    LinkedList<diff_match_patch.Diff> diffs = diffMatchPatch.diff_main(name, target);
+                    return diffs.stream().map(y->y.text.length()).reduce(Integer::sum).orElse(0);
+                })).orElse(null);
+                if (matched != null){
+                    entityName = matched.getName();
+                }else {
+                    throw new RuntimeException("please add '/** @entity entityName */' in doc comment.");
+                }
+            }
         }
 
         String fullEntityName = null;
@@ -282,7 +321,39 @@ public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
             }
         }
         if (tableName == null) {
-            throw new RuntimeException("please add '/** @table schema.table */' in doc comment.");
+            List<String> selectIds = mapper.getSelectIds();
+            Map<String, String> sqls = MybatisToSqlUtils.toSqls(mapper.getText(), selectIds);
+
+            List<SQLExprTableSource> tableSources = new ArrayList<>();
+            for (String sql : sqls.values()) {
+                if (StringUtils.isBlank(sql)) continue;
+                SQLStatement sqlStatement = SQLUtils.parseSingleMysqlStatement(sql);
+                sqlStatement.accept(new MySqlASTVisitorAdapter(){
+                    @Override
+                    public boolean visit(SQLExprTableSource x) {
+                        tableSources.add(x);
+                        return true;
+                    }
+                });
+            }
+
+            List<String> tableFullNames = tableSources.stream().map(x -> x.getExpr().toString()).collect(Collectors.toList());
+            Map<String, List<String>> tableFullNameMap = tableFullNames.stream().collect(Collectors.groupingBy(x -> x));
+            List<Map<String, Object>> sorted = new ArrayList<>();
+            for (String table : tableFullNameMap.keySet()) {
+                Map<String, Object> obj = new HashMap<>();
+                List<String> names = tableFullNameMap.get(table);
+                obj.put("size",names.size());
+                obj.put("name",table);
+                sorted.add(obj);
+            }
+            Map<String, Object> first = sorted.stream().max(Comparator.comparingInt(y-> (int) y.get("size"))).orElse(null);
+            if (first != null){
+                String name = (String)first.get("name");
+                tableName = name;
+            }else {
+                throw new RuntimeException("please add '/** @table schema.table */' in doc comment.");
+            }
         }
 
         PerformanceUtil.mark("genMapperXmlFragment_3");

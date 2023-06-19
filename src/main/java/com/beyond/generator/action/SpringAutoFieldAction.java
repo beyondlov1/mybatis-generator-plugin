@@ -107,7 +107,7 @@ public class SpringAutoFieldAction extends PsiElementBaseIntentionAction {
 
     @Override
     public @NotNull @IntentionFamilyName String getFamilyName() {
-        return "spring auto field annotation";
+        return "generate spring field";
     }
 
     @NotNull

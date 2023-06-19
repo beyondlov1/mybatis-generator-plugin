@@ -3,7 +3,9 @@ package com.beyond.generator.dom;
 
 import com.intellij.openapi.vfs.VirtualFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author beyond
@@ -18,6 +20,7 @@ public class MapperLite {
     private List<String> resultMapIds;
     private List<String> sqlIds;
     private String text;
+    private Map<String,String> resultMapId2TypeMap = new HashMap<>();
 
     public VirtualFile getVirtualFile() {
         return virtualFile;
@@ -81,5 +84,13 @@ public class MapperLite {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    public Map<String, String> getResultMapId2TypeMap() {
+        return resultMapId2TypeMap;
+    }
+
+    public void setResultMapId2TypeMap(Map<String, String> resultMapId2TypeMap) {
+        this.resultMapId2TypeMap = resultMapId2TypeMap;
     }
 }

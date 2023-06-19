@@ -165,9 +165,11 @@ public class MybatisToSqlUtils {
             }
             if ("if".equals(element.getName())){
                 List children = element.getContent();
+                s.append(" ");
                 for (Object child : children) {
                     s.append(getText(child, root));
                 }
+                s.append(" ");
                 return s.toString();
             }
             return ((Element) o).getTextTrim();
@@ -208,9 +210,11 @@ public class MybatisToSqlUtils {
             }
             if ("if".equals(element.getName())){
                 List children = element.getContent();
+                s.append(" ");
                 for (Object child : children) {
                     s.append(getText(child, root));
                 }
+                s.append(" ");
                 return s.toString();
             }
             return ((Element) o).getTextTrim();
