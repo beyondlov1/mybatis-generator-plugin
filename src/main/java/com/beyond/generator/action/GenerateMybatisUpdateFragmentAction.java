@@ -209,7 +209,7 @@ public class GenerateMybatisUpdateFragmentAction extends GenerateMyBatisBaseActi
                     String set = String.format("%s = CASE %s <foreach collection=\"%s\" item=\"item\"> WHEN #{item.%s} THEN #{item.%s} </foreach> ELSE %s END", column, condition.get("col"), argName, condition.get("field"), field, column);
                     sets.add(set);
                 }
-                insertSql.append(String.join(",",sets));
+                insertSql.append(String.join(",\n",sets));
                 insertSql.append(" \n ");
                 insertSql.append(" where ");
                 insertSql.append(where);
