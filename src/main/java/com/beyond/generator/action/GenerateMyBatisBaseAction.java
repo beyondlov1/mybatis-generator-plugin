@@ -105,6 +105,7 @@ public abstract class GenerateMyBatisBaseAction extends PsiElementBaseIntentionA
         dataSource.setUser(username);
         dataSource.setPassword(password);
         JdbcTemplate jdbcTemplate = new JdbcTemplate();
+        jdbcTemplate.setQueryTimeout(5);
         jdbcTemplate.setDataSource(dataSource);
 
         if (tableFullName == null || !tableFullName.contains(".")) {
@@ -146,13 +147,13 @@ public abstract class GenerateMyBatisBaseAction extends PsiElementBaseIntentionA
             }
         }
 
-        writeEntity(project, schema, tableName, columns, StringUtils.substringBeforeLast(entityFullName, "."), StringUtils.substringAfterLast(entityFullName, "."), false);
+        writeEntity(project, schema, tableName, columns, StringUtils.substringBeforeLast(entityFullName, "."), StringUtils.substringAfterLast(entityFullName, "."), false, false);
 
         PsiDocumentUtils.commitAndSaveDocument(psiDocumentManager, xmldoc);
     }
 
 
-    private JavaEntity writeEntity(Project project, String schema, String table, List<Column> columns, String pkg, String entityName, boolean forMyBatisPlus) {
+    private JavaEntity writeEntity(Project project, String schema, String table, List<Column> columns, String pkg, String entityName, boolean forMyBatisPlus, boolean withDefaultValue) {
         if (org.apache.commons.lang3.StringUtils.isBlank(pkg)) {
             return null;
         }
@@ -205,6 +206,9 @@ public abstract class GenerateMyBatisBaseAction extends PsiElementBaseIntentionA
             fieldEntity.setType(aClass.getSimpleName());
             fieldEntity.setName(com.beyond.generator.StringUtils.lineToHump(column.getColumnName()));
             fieldEntity.setComment(column.getColumnComment());
+            if (withDefaultValue){
+                fieldEntity.setValueStr(column.getColumnDefault());
+            }
             javaEntity.getFields().add(fieldEntity);
         }
         javaEntity.setTableFullName(schema+"."+table);

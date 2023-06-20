@@ -60,7 +60,8 @@ public class GenerateForm extends DialogWrapper {
                 .addItem(new InputItem("mapperSuffix", "mapperSuffix: ", getProperty("mapperSuffix", project)))
                 .addItem(new InputItem("mapperXmlSuffix", "mapperXmlSuffix: ", getProperty("mapperXmlSuffix", project)))
                 .addItem(new InputItem("forMyBatisPlus", "forMyBatisPlus: ", getProperty("forMyBatisPlus", project)))
-                .buildPanel(13, 2);
+                .addItem(new InputItem("withDefaultValue", "withDefaultValue: ", getProperty("withDefaultValue", project)))
+                .buildPanel(14, 2);
     }
 
 
@@ -194,6 +195,7 @@ public class GenerateForm extends DialogWrapper {
         saveProperty("mapperSuffix", getData().get("mapperSuffix"), true, project);
         saveProperty("mapperXmlSuffix", getData().get("mapperXmlSuffix"), true, project);
         saveProperty("forMyBatisPlus", getData().get("forMyBatisPlus"), true, project);
+        saveProperty("withDefaultValue", getData().get("withDefaultValue"), true, project);
         saveUserNameAndPassword(getData().get("username"), getData().get("password"), true, project);
     }
 

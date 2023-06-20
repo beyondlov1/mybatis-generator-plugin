@@ -50,6 +50,7 @@ public class GenerateAction extends AnAction {
                 String mapperSuffix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperSuffix"));
                 String mapperXmlSuffix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperXmlSuffix"));
                 String forMyBatisPlus = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("forMyBatisPlus"));
+                String withDefaultValue = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("withDefaultValue"));
 
                 MysqlDataSource dataSource = new MysqlDataSource();
                 dataSource.setUrl(jdbcUrl);
@@ -73,7 +74,7 @@ public class GenerateAction extends AnAction {
                         throw new RuntimeException("table not exist");
                     }
 
-                    JavaEntity javaEntity = writeEntity(project, schema, table, columns, pkg, tableExcludePrefix, tablePrefix, Boolean.parseBoolean(forMyBatisPlus));
+                    JavaEntity javaEntity = writeEntity(project, schema, table, columns, pkg, tableExcludePrefix, tablePrefix, Boolean.parseBoolean(forMyBatisPlus),  Boolean.parseBoolean(withDefaultValue));
                     MapperEntity mapperEntity = writeMapper(project, javaEntity, mapperPackage, mapperSuffix, schema, table, Boolean.parseBoolean(forMyBatisPlus));
                     writeMapperXml(project, javaEntity, mapperEntity, columns, mapperXmlPathInResource, mapperXmlSuffix);
                 }
@@ -120,7 +121,7 @@ public class GenerateAction extends AnAction {
     }
 
 
-    private JavaEntity writeEntity(Project project,  String schema, String table, List<Column> columns, String pkg, String excludePrefix, String tablePrefix, boolean forMyBatisPlus) {
+    private JavaEntity writeEntity(Project project, String schema, String table, List<Column> columns, String pkg, String excludePrefix, String tablePrefix, boolean forMyBatisPlus, boolean withDefaultValue) {
         if (org.apache.commons.lang3.StringUtils.isBlank(pkg)) {
             return null;
         }
@@ -182,6 +183,9 @@ public class GenerateAction extends AnAction {
             fieldEntity.setType(aClass.getSimpleName());
             fieldEntity.setName(StringUtils.lineToHump(column.getColumnName()));
             fieldEntity.setComment(column.getColumnComment());
+            if (withDefaultValue){
+                fieldEntity.setValueStr(column.getColumnDefault());
+            }
             javaEntity.getFields().add(fieldEntity);
         }
         javaEntity.setTableFullName(schema+"."+table);
