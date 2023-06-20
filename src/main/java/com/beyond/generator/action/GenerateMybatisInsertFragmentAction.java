@@ -34,6 +34,7 @@ import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.javadoc.PsiDocTagValue;
 import com.intellij.util.IncorrectOperationException;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jdom.JDOMException;
 import org.jetbrains.annotations.NotNull;
@@ -42,8 +43,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.beyond.generator.utils.MapperUtil.*;
@@ -178,11 +181,23 @@ public class GenerateMybatisInsertFragmentAction extends GenerateMyBatisBaseActi
             insertSql.append("insert into ");
             insertSql.append(tableName);
             insertSql.append(" ( ");
+
+            String[] insertFields = StringUtils.splitByWholeSeparator(StringUtils.substringAfter(StringUtils.substringBefore(methodName, "By"), "insert"), "And");
+            Set<String> insertFieldSet = new HashSet<>();
+            for (int i = 0; i < insertFields.length; i++) {
+                insertFields[i] = StringUtil.deCapitalize(insertFields[i]);
+                insertFieldSet.add(insertFields[i]);
+            }
             @NotNull PsiField[] fields = argumentClass.getFields();
             List<String> columns = new ArrayList<>();
             for (PsiField allField : fields) {
                 if (allField.getModifierList().hasModifierProperty("static")){
                     continue;
+                }
+                if (CollectionUtils.isNotEmpty(insertFieldSet)){
+                    if (!insertFieldSet.contains(allField.getName())){
+                        continue;
+                    }
                 }
                 String column = StringUtil.humpToLine(allField.getName());
                 columns.add(column);
