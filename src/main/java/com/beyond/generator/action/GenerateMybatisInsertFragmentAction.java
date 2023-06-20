@@ -216,7 +216,7 @@ public class GenerateMybatisInsertFragmentAction extends GenerateMyBatisBaseActi
             if (isList){
                 insertSql.append("<foreach collection=\""+argName+"\" item=\"item\" separator=\",\" open=\"(\" close=\")\">\n");
                 insertSql.append(String.join(",", fieldNameFragments));
-                insertSql.append("</foreach>");
+                insertSql.append("\n</foreach>");
             }else{
                 insertSql.append(" ( ");
                 insertSql.append(String.join(",", fieldNameFragments));
