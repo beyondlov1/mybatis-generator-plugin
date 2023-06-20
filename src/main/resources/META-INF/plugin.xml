@@ -38,6 +38,13 @@
 
     <!-- Add your extensions here -->
     <intentionAction>
+      <className>com.beyond.generator.action.GenerateMybatisInsertFragmentAction</className>
+    </intentionAction>
+    <intentionAction>
+      <className>com.beyond.generator.action.GenerateMybatisUpdateFragmentAction</className>
+    </intentionAction>
+
+    <intentionAction>
       <className>com.beyond.generator.action.GenerateMybatisFragmentAction</className>
     </intentionAction>
 
