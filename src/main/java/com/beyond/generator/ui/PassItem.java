@@ -1,7 +1,7 @@
 package com.beyond.generator.ui;
 
 import com.intellij.ui.components.JBPasswordField;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;

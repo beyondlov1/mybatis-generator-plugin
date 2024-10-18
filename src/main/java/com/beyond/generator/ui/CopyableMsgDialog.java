@@ -3,6 +3,7 @@ package com.beyond.generator.ui;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.ui.components.JBTextField;
+import org.codehaus.plexus.util.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -32,6 +33,9 @@ public class CopyableMsgDialog extends DialogWrapper {
     }
 
     public static CopyableMsgDialog show(@Nullable Project project,String message){
+        if (StringUtils.isEmpty(message)){
+            return null;
+        }
         CopyableMsgDialog copyableMsgDialog = new CopyableMsgDialog(project, message);
         copyableMsgDialog.show();
         return copyableMsgDialog;

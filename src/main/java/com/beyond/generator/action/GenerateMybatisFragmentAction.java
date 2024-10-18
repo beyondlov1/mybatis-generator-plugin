@@ -12,6 +12,7 @@ import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiElementUtil;
 import com.beyond.generator.utils.diff_match_patch;
 import com.intellij.codeInspection.util.IntentionFamilyName;
+import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
@@ -35,11 +36,10 @@ import com.intellij.psi.javadoc.PsiDocTagValue;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.IncorrectOperationException;
+import com.intellij.util.ThrowableRunnable;
 import org.apache.commons.lang3.StringUtils;
-import org.jdom.JDOMException;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,7 +61,7 @@ import static com.beyond.generator.utils.MapperUtil.*;
  */
 public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
     @Override
-    public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
+    public void _invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
 
         PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
         PsiFile containingFile = element.getContainingFile();
@@ -73,7 +73,7 @@ public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
                 String methodName = getPrevWord(document, editor);
                 if (StringUtils.isBlank(methodName)) return;
                 gen(project, editor, psiDocumentManager, document, containingClass, methodName);
-            } catch (JDOMException | IOException e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
                 msgE(project, e.getMessage());
             }
@@ -92,14 +92,14 @@ public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
                         PerformanceUtil.mark("invoke3");
                     }
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
                 msgE(project, e.getMessage());
             }
         }
     }
 
-    private void gen2(@NotNull Project project, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName) throws JDOMException, IOException {
+    private void gen2(@NotNull Project project, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName) throws Throwable {
         String entityName = null;
         PsiDocComment docComment = containingClass.getDocComment();
         if (docComment != null) {
@@ -195,7 +195,7 @@ public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
         return true;
     }
 
-    private void gen(@NotNull Project project, Editor editor, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName) throws JDOMException, IOException {
+    private void gen(@NotNull Project project, Editor editor, PsiDocumentManager psiDocumentManager, Document document, PsiClass containingClass, String methodName) throws Throwable {
         String entityName = null;
         PsiDocComment docComment = containingClass.getDocComment();
         if (docComment != null) {
@@ -292,7 +292,7 @@ public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
         }
     }
 
-    private boolean genMapperXmlFragment(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment, String methodName) throws JDOMException, IOException {
+    private boolean genMapperXmlFragment(@NotNull Project project, PsiDocumentManager psiDocumentManager, PsiClass mapperClass, PsiDocComment mapperDocComment, String methodName) throws Throwable {
 
         String qualifiedName = mapperClass.getQualifiedName();
         PerformanceUtil.mark("genMapperXmlFragment_1");
@@ -377,14 +377,16 @@ public class GenerateMybatisFragmentAction extends GenerateMyBatisBaseAction {
             Optional<String> selectOptional = mapper.getSqlIds().stream().filter(x -> StringUtils.equals(x, methodName)).findFirst();
             PerformanceUtil.mark("genMapperXmlFragment_8");
 
-            if (!selectOptional.isPresent()) {
+            if (selectOptional.isEmpty()) {
                 int insertPos = xmldoc.getText().indexOf("</mapper>");
                 PerformanceUtil.mark("genMapperXmlFragment_9");
                 String sql = "\n" + FragmentGenUtils.createXmlFragment(methodName, tableName) + "\n";
-                PerformanceUtil.mark("genMapperXmlFragment_10");
-                xmldoc.insertString(insertPos, sql);
-                PerformanceUtil.mark("genMapperXmlFragment_11");
-                PsiDocumentUtils.commitAndSaveDocument(psiDocumentManager, xmldoc);
+                WriteAction.run((ThrowableRunnable<Throwable>) () -> {
+                    PerformanceUtil.mark("genMapperXmlFragment_10");
+                    xmldoc.insertString(insertPos, sql);
+                    PerformanceUtil.mark("genMapperXmlFragment_11");
+                    PsiDocumentUtils.commitAndSaveDocument(psiDocumentManager, xmldoc);
+                });
             } else {
                 // todo replace
             }

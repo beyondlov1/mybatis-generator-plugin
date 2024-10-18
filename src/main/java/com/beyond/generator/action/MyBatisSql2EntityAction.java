@@ -8,24 +8,17 @@ import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
 import com.beyond.gen.freemarker.JavaEntity;
 import com.beyond.generator.PathUtils;
 import com.beyond.generator.PluginUtils;
-import com.beyond.generator.ui.CopyableMsgDialog;
-import com.beyond.generator.ui.EntityForm;
+import com.beyond.generator.StringUtil;
 import com.beyond.generator.ui.EntityNameForm;
 import com.beyond.generator.utils.MybatisToSqlUtils;
-import com.beyond.generator.utils.PsiDocumentUtils;
-import com.beyond.generator.utils.PsiElementUtil;
 import com.beyond.generator.utils.PsiFileUtil;
-import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VfsUtil;
-import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
@@ -35,10 +28,8 @@ import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiPackageStatement;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
-import com.intellij.util.DocumentUtil;
 import com.intellij.util.IncorrectOperationException;
 import org.apache.commons.lang3.StringUtils;
-import org.jdom.Attribute;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
@@ -62,9 +53,9 @@ import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
  * @author chenshipeng
  * @date 2022/11/08
  */
-public class MyBatisSql2EntityAction extends PsiElementBaseIntentionAction {
+public class MyBatisSql2EntityAction extends MyBaseIntentionAction {
     @Override
-    public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
+    public void _invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
 
         try {
 
@@ -91,7 +82,7 @@ public class MyBatisSql2EntityAction extends PsiElementBaseIntentionAction {
                         propertyName = ((SQLPropertyExpr) selectItem.getExpr()).getName();
                     }
                     if (propertyName.contains("_")){
-                        propertyName = com.beyond.generator.StringUtils.lineToHump(propertyName);
+                        propertyName = StringUtil.lineToHump(propertyName);
                         selectItem.setAlias(propertyName);
                     }
                 }else {

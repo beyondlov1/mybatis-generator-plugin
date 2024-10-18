@@ -4,7 +4,7 @@ import com.beyond.gen.freemarker.JavaEntity;
 import com.beyond.gen.freemarker.MapperEntity;
 import com.beyond.gen.freemarker.MapperXmlEntity;
 import com.beyond.generator.Column;
-import com.beyond.generator.StringUtils;
+import com.beyond.generator.StringUtil;
 import com.beyond.generator.TypeConverter;
 import com.beyond.generator.dom.Mapper;
 import com.beyond.generator.dom.MapperLite;
@@ -40,7 +40,8 @@ import com.intellij.util.xml.DomFileElement;
 import com.intellij.util.xml.DomService;
 import com.intellij.util.xml.GenericAttributeValue;
 import com.mysql.cj.jdbc.MysqlDataSource;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.codehaus.plexus.util.StringUtils;
 import org.jdom.Attribute;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -84,7 +85,7 @@ public class MapperUtil {
                 String columnKey = column.getColumnKey();
                 if (org.apache.commons.lang3.StringUtils.equalsIgnoreCase("PRI", columnKey)) {
                     mapperXmlEntity.setIdColumnName(column.getColumnName());
-                    mapperXmlEntity.setIdPropertyName(StringUtils.lineToHump(column.getColumnName()));
+                    mapperXmlEntity.setIdPropertyName(StringUtil.lineToHump(column.getColumnName()));
                     mapperXmlEntity.setIdJdbcType(TypeConverter.toCommonJdbcType(column.getDataType()).toUpperCase());
                     break;
                 }
@@ -94,7 +95,7 @@ public class MapperUtil {
                 if (!org.apache.commons.lang3.StringUtils.equalsIgnoreCase("PRI", columnKey)) {
                     MapperXmlEntity.ColumnEntity columnEntity = new MapperXmlEntity.ColumnEntity();
                     columnEntity.setColumnName(column.getColumnName());
-                    columnEntity.setPropertyName(StringUtils.lineToHump(column.getColumnName()));
+                    columnEntity.setPropertyName(StringUtil.lineToHump(column.getColumnName()));
                     columnEntity.setJdbcType(TypeConverter.toCommonJdbcType(column.getDataType()).toUpperCase());
                     mapperXmlEntity.getNormalColumns().add(columnEntity);
                 }
@@ -103,7 +104,7 @@ public class MapperUtil {
             for (Column column : columns) {
                 MapperXmlEntity.ColumnEntity columnEntity = new MapperXmlEntity.ColumnEntity();
                 columnEntity.setColumnName(column.getColumnName());
-                columnEntity.setPropertyName(StringUtils.lineToHump(column.getColumnName()));
+                columnEntity.setPropertyName(StringUtil.lineToHump(column.getColumnName()));
                 columnEntity.setJdbcType(TypeConverter.toCommonJdbcType(column.getDataType()).toUpperCase());
                 mapperXmlEntity.getNormalColumns().add(columnEntity);
             }
@@ -353,6 +354,7 @@ public class MapperUtil {
     }
 
     public static void msgE(@NotNull Project project, String s) {
+        if(StringUtils.isEmpty(s)) return;
         Notifications.Bus.notify(new Notification("MyBatis-Generator", "MyBatis-Generator", s, NotificationType.ERROR));
     }
 
@@ -455,7 +457,7 @@ public class MapperUtil {
         List<JvmAnnotationAttribute> attributes = select.getAttributes();
         for (JvmAnnotationAttribute attribute : attributes) {
             String attributeName = attribute.getAttributeName();
-            if (org.apache.commons.lang.StringUtils.isBlank(attributeName) || org.apache.commons.lang.StringUtils.equalsIgnoreCase(attributeName,"value")){
+            if (org.apache.commons.lang3.StringUtils.isBlank(attributeName) || org.apache.commons.lang3.StringUtils.equalsIgnoreCase(attributeName,"value")){
                 if ( attribute.getAttributeValue() instanceof JvmAnnotationConstantValue) {
                     return ((JvmAnnotationConstantValue) attribute.getAttributeValue()).getConstantValue().toString();
                 }

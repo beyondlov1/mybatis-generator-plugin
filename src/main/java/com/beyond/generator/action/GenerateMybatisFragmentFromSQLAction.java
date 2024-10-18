@@ -9,26 +9,20 @@ import com.beyond.gen.freemarker.FragmentGenUtils;
 import com.beyond.gen.freemarker.JavaEntity;
 import com.beyond.generator.PathUtils;
 import com.beyond.generator.PluginUtils;
-import com.beyond.generator.dom.IdDomElement;
-import com.beyond.generator.dom.Mapper;
+import com.beyond.generator.StringUtil;
 import com.beyond.generator.dom.MapperLite;
 import com.beyond.generator.ui.EntityNameForm;
-import com.beyond.generator.ui.JdbcForm;
 import com.beyond.generator.ui.SQLForm;
-import com.beyond.generator.utils.MapperUtil;
 import com.beyond.generator.utils.MybatisToSqlUtils;
-import com.beyond.generator.utils.PerformanceUtil;
 import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiElementUtil;
 import com.beyond.generator.utils.PsiFileUtil;
-import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
@@ -76,7 +70,7 @@ public class GenerateMybatisFragmentFromSQLAction extends GenerateMyBatisBaseAct
     }
 
     @Override
-    public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
+    public void _invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
 
         PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
         PsiFile containingFile = element.getContainingFile();
@@ -154,7 +148,7 @@ public class GenerateMybatisFragmentFromSQLAction extends GenerateMyBatisBaseAct
                         propertyName = ((SQLPropertyExpr) selectItem.getExpr()).getName();
                     }
                     if (propertyName.contains("_")){
-                        propertyName = com.beyond.generator.StringUtils.lineToHump(propertyName);
+                        propertyName = StringUtil.lineToHump(propertyName);
                         selectItem.setAlias(propertyName);
                     }
                 }else {

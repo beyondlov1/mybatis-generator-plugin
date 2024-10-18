@@ -6,7 +6,7 @@ import com.intellij.credentialStore.Credentials;
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.project.Project;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author chenshipeng
@@ -17,11 +17,11 @@ public class PropertyUtil {
 
     public static String getProperty(String key, Project project) {
         PropertiesComponent properties = PropertiesComponent.getInstance(project);
-        if (org.apache.commons.lang.StringUtils.isNotBlank(properties.getValue(key))) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(properties.getValue(key))) {
             return StringUtils.trim(properties.getValue(key));
         } else {
             PropertiesComponent global = PropertiesComponent.getInstance();
-            if (org.apache.commons.lang.StringUtils.isNotBlank(global.getValue(key))) {
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(global.getValue(key))) {
                 return StringUtils.trim(global.getValue(key));
             }
         }

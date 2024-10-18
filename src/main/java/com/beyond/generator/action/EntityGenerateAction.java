@@ -3,19 +3,16 @@ package com.beyond.generator.action;
 import com.beyond.gen.freemarker.JavaEntity;
 import com.beyond.generator.PathUtils;
 import com.beyond.generator.PluginUtils;
-import com.beyond.generator.ui.Callback;
 import com.beyond.generator.ui.EntityForm;
 import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiElementUtil;
 import com.beyond.generator.utils.PsiFileUtil;
-import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiDeclarationStatement;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
@@ -23,12 +20,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiImportList;
 import com.intellij.psi.PsiImportStatementBase;
 import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiJavaParserFacade;
 import com.intellij.psi.PsiPackageStatement;
-import com.intellij.psi.PsiStatement;
-import com.intellij.psi.PsiVariable;
-import com.intellij.psi.impl.PsiJavaParserFacadeImpl;
-import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.IncorrectOperationException;
@@ -41,16 +33,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.beyond.generator.utils.MapperUtil.*;
+import static com.beyond.generator.utils.MapperUtil.msg;
 import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
 
 /**
  * @author chenshipeng
  * @date 2022/11/08
  */
-public class EntityGenerateAction extends PsiElementBaseIntentionAction {
-    @Override
-    public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
+public class EntityGenerateAction extends MyBaseIntentionAction {
+
+    public void _invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
 
         PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
         PsiClass containingClass = PsiElementUtil.getContainingClass(element);

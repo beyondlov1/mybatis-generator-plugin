@@ -1,26 +1,15 @@
 package com.beyond.generator.action;
 
 import com.beyond.generator.ui.CopyableMsgDialog;
-import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiElementUtil;
-import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.codeInspection.util.IntentionFamilyName;
-import com.intellij.ide.highlighter.JavaFileType;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
-import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiExpression;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiFileFactory;
-import com.intellij.psi.PsiIdentifier;
-import com.intellij.psi.PsiImportList;
-import com.intellij.psi.PsiImportStatementBase;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiJavaParserFacade;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
@@ -28,31 +17,32 @@ import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeElement;
-import com.intellij.psi.impl.PsiJavaParserFacadeImpl;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.util.DocumentUtil;
 import com.intellij.util.IncorrectOperationException;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.ListUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * @author chenshipeng
  * @date 2022/11/25
  */
-public class ClassReferenceCollectAction extends PsiElementBaseIntentionAction {
-
+public class ClassReferenceCollectAction extends MyBaseIntentionAction {
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                _invoke(project, editor, element);
+            }
+        });
+    }
+
+    protected void _invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
         List<String> classAbsPaths = new ArrayList<>();
         List<PsiClass> result = new ArrayList<>();
         PsiClass containingClass = PsiElementUtil.getContainingClass(element);

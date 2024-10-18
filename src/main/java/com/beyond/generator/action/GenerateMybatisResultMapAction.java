@@ -35,7 +35,7 @@ import static com.beyond.generator.utils.MapperUtil.*;
  */
 public class GenerateMybatisResultMapAction extends GenerateMyBatisBaseAction {
     @Override
-    public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
+    public void _invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
 
         PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
         PsiClass containingClass = PsiElementUtil.getContainingClass(element);

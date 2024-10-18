@@ -2,7 +2,6 @@ package com.beyond.generator.action;
 
 import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiElementUtil;
-import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.editor.Editor;
@@ -11,7 +10,6 @@ import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.PsiImportList;
@@ -21,7 +19,7 @@ import com.intellij.psi.PsiJavaParserFacade;
 import com.intellij.psi.impl.PsiJavaParserFacadeImpl;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.util.IncorrectOperationException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -32,9 +30,9 @@ import java.util.Objects;
  * @author chenshipeng
  * @date 2022/11/25
  */
-public class Comment2SwaggerAnnotationAction extends PsiElementBaseIntentionAction {
-    @Override
-    public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
+public class Comment2SwaggerAnnotationAction extends MyBaseIntentionAction {
+
+    public void _invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
         PsiJavaParserFacade psiJavaParserFacade = new PsiJavaParserFacadeImpl(project);
         PsiClass containingClass = PsiElementUtil.getContainingClass(element);
         @NotNull PsiField[] allFields = containingClass.getAllFields();

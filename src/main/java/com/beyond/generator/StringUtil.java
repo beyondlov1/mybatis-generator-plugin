@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 /**
  * @author beyond
  */
-public class StringUtils {
+public class StringUtil {
     private static final String UNDERLINE_STR = "_";
     private static final char UNDERLINE_CHAR = '_';
 

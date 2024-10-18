@@ -2,7 +2,6 @@ package com.beyond.generator.action;
 
 import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiElementUtil;
-import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.editor.Editor;
@@ -21,7 +20,7 @@ import com.intellij.psi.PsiJavaParserFacade;
 import com.intellij.psi.impl.PsiJavaParserFacadeImpl;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.IncorrectOperationException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -30,9 +29,9 @@ import java.util.Objects;
  * @author chenshipeng
  * @date 2022/11/25
  */
-public class SpringAutoFieldAction extends PsiElementBaseIntentionAction {
+public class SpringAutoFieldAction extends MyBaseIntentionAction {
     @Override
-    public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
+    public void _invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
 
         PsiIdentifier identify = PsiTreeUtil.findChildOfType(element.getPrevSibling(), PsiIdentifier.class);
         if (identify == null) return;

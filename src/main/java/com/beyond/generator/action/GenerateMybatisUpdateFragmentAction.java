@@ -60,7 +60,7 @@ import static com.beyond.generator.utils.MapperUtil.*;
  */
 public class GenerateMybatisUpdateFragmentAction extends GenerateMyBatisBaseAction {
     @Override
-    public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
+    public void _invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
 
         PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
         PsiFile containingFile = element.getContainingFile();

@@ -42,7 +42,7 @@ public class GenerateAction extends AnAction {
                 String password = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("password"));
                 String schema = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("schema"));
                 String tables = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("tables"));
-                String pkg = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("package"));
+                String pkg = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("entityPackage"));
                 String mapperPackage = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperPackage"));
                 String mapperXmlPathInResource = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("mapperXmlPathInResource"));
                 String tableExcludePrefix = org.apache.commons.lang3.StringUtils.trimToNull(form.getData().get("tableExcludePrefix"));
@@ -74,7 +74,7 @@ public class GenerateAction extends AnAction {
                         throw new RuntimeException("table not exist");
                     }
 
-                    JavaEntity javaEntity = writeEntity(project, schema, table, columns, pkg, tableExcludePrefix, tablePrefix, Boolean.parseBoolean(forMyBatisPlus),  Boolean.parseBoolean(withDefaultValue));
+                    JavaEntity javaEntity = writeEntity(project, schema, table, columns, pkg, tableExcludePrefix, tablePrefix, Boolean.parseBoolean(forMyBatisPlus), Boolean.parseBoolean(withDefaultValue));
                     MapperEntity mapperEntity = writeMapper(project, javaEntity, mapperPackage, mapperSuffix, schema, table, Boolean.parseBoolean(forMyBatisPlus));
                     writeMapperXml(project, javaEntity, mapperEntity, columns, mapperXmlPathInResource, mapperXmlSuffix);
                 }
@@ -147,18 +147,18 @@ public class GenerateAction extends AnAction {
             modifiedTableName = table;
         }
         if (org.apache.commons.lang3.StringUtils.isNotBlank(tablePrefix)) {
-            modifiedTableName = StringUtils.lineToHump(tablePrefix) + org.apache.commons.lang3.StringUtils.capitalize(modifiedTableName);
+            modifiedTableName = StringUtil.lineToHump(tablePrefix) + org.apache.commons.lang3.StringUtils.capitalize(modifiedTableName);
         }
-        javaEntity.setClassName(org.apache.commons.lang3.StringUtils.capitalize(StringUtils.lineToHump(modifiedTableName)));
+        javaEntity.setClassName(org.apache.commons.lang3.StringUtils.capitalize(StringUtil.lineToHump(modifiedTableName)));
 
         List<Column> normalCols = columns;
         Column idCol = null;
         List<Column> ids = columns.stream().filter(x -> "PRI".equals(x.getColumnKey())).collect(Collectors.toList());
-        if (ids.size() == 1){
+        if (ids.size() == 1) {
             normalCols = columns.stream().filter(x -> !"PRI".equals(x.getColumnKey())).collect(Collectors.toList());
             idCol = ids.get(0);
         }
-        if (idCol != null){
+        if (idCol != null) {
             Class<?> aClass = TypeConverter.toJavaType(idCol.getDataType());
             if (!aClass.getName().startsWith("java.lang")) {
                 if (!imports.contains(aClass.getName())) {
@@ -167,7 +167,7 @@ public class GenerateAction extends AnAction {
             }
             JavaEntity.FieldEntity fieldEntity = new JavaEntity.FieldEntity();
             fieldEntity.setType(aClass.getSimpleName());
-            fieldEntity.setName(StringUtils.lineToHump(idCol.getColumnName()));
+            fieldEntity.setName(StringUtil.lineToHump(idCol.getColumnName()));
             fieldEntity.setComment(idCol.getColumnComment());
             javaEntity.setId(fieldEntity);
         }
@@ -181,24 +181,23 @@ public class GenerateAction extends AnAction {
             }
             JavaEntity.FieldEntity fieldEntity = new JavaEntity.FieldEntity();
             fieldEntity.setType(aClass.getSimpleName());
-            fieldEntity.setName(StringUtils.lineToHump(column.getColumnName()));
+            fieldEntity.setName(StringUtil.lineToHump(column.getColumnName()));
             fieldEntity.setComment(column.getColumnComment());
-            if (withDefaultValue){
+            if (withDefaultValue) {
                 fieldEntity.setValueStr(column.getColumnDefault());
             }
             javaEntity.getFields().add(fieldEntity);
         }
-        javaEntity.setTableFullName(schema+"."+table);
+        javaEntity.setTableFullName(schema + "." + table);
 
         if (forMyBatisPlus) {
-            PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir, javaEntity.getClassName()+".java"), javaEntity.toGen(false), "entity_mybatisplus.ftl");
+            PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir, javaEntity.getClassName() + ".java"), javaEntity.toGen(false), "entity_mybatisplus.ftl");
         } else {
-            PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir, javaEntity.getClassName()+".java"), javaEntity.toGen(false), "entity.ftl");
+            PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir, javaEntity.getClassName() + ".java"), javaEntity.toGen(false), "entity.ftl");
         }
 
         return javaEntity;
     }
-
 
 
     private MapperEntity writeMapper(Project project, JavaEntity javaEntity, String mapperPackage, String mapperSuffix, String schema, String table, boolean forMyBatisPlus) {
@@ -217,25 +216,25 @@ public class GenerateAction extends AnAction {
         mapperEntity.setMapperName(javaEntity.getClassName() + mapperSuffix);
         mapperEntity.setPackageName(mapperPackage);
         mapperEntity.setTableFullName(schema + "." + table);
-        mapperEntity.setEntityName(javaEntity.getPackageName()+"."+javaEntity.getClassName());
+        mapperEntity.setEntityName(javaEntity.getPackageName() + "." + javaEntity.getClassName());
         List<String> imports = new ArrayList<String>();
 //        if (!javaEntity.getPackageName().equals(mapperPackage)){
 //            imports.add(javaEntity.getPackageName()+"."+javaEntity.getClassName());
 //        }
 //        imports.add("java.util.List");
 
-        if (forMyBatisPlus){
-            mapperEntity.setSuperMapperName("BaseMapper<"+javaEntity.getClassName()+">");
-            imports.add(javaEntity.getPackageName()+"."+javaEntity.getClassName());
+        if (forMyBatisPlus) {
+            mapperEntity.setSuperMapperName("BaseMapper<" + javaEntity.getClassName() + ">");
+            imports.add(javaEntity.getPackageName() + "." + javaEntity.getClassName());
         }
 
         imports.add("org.apache.ibatis.annotations.Mapper");
-        if (forMyBatisPlus){
+        if (forMyBatisPlus) {
             imports.add("com.baomidou.mybatisplus.core.mapper.BaseMapper");
         }
         mapperEntity.setImports(imports);
 
-        PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir,javaEntity.getClassName() + mapperSuffix + ".java"), mapperEntity, "mapper.ftl");
+        PsiFileUtil.writeFromTemplate(project, PathUtils.concat(targetDir, javaEntity.getClassName() + mapperSuffix + ".java"), mapperEntity, "mapper.ftl");
 
         return mapperEntity;
     }

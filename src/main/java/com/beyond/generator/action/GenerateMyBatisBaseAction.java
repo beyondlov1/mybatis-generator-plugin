@@ -5,12 +5,12 @@ import com.beyond.gen.freemarker.JavaEntity;
 import com.beyond.generator.Column;
 import com.beyond.generator.PathUtils;
 import com.beyond.generator.PluginUtils;
+import com.beyond.generator.StringUtil;
 import com.beyond.generator.TypeConverter;
 import com.beyond.generator.ui.JdbcForm;
 import com.beyond.generator.utils.MapperUtil;
 import com.beyond.generator.utils.PsiDocumentUtils;
 import com.beyond.generator.utils.PsiFileUtil;
-import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiDocumentManager;
@@ -39,7 +39,8 @@ import static com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE;
  * @author chenshipeng
  * @date 2023/01/24
  */
-public abstract class GenerateMyBatisBaseAction extends PsiElementBaseIntentionAction {
+public abstract class GenerateMyBatisBaseAction extends MyBaseIntentionAction {
+
 
     protected boolean createXmlResultMapAndColumnList(@NotNull Project project, PsiDocumentManager psiDocumentManager, String tableFullName, String entityFullName, Document xmldoc, boolean resultMapExists, boolean baseColumnListExists ) throws JDOMException {
 
@@ -172,7 +173,7 @@ public abstract class GenerateMyBatisBaseAction extends PsiElementBaseIntentionA
             imports.add("com.baomidou.mybatisplus.annotation.TableName");
         }
         javaEntity.setImports(imports);
-        javaEntity.setClassName(org.apache.commons.lang3.StringUtils.capitalize(com.beyond.generator.StringUtils.lineToHump(entityName)));
+        javaEntity.setClassName(org.apache.commons.lang3.StringUtils.capitalize(StringUtil.lineToHump(entityName)));
 
         List<Column> normalCols = columns;
         Column idCol = null;
@@ -190,7 +191,7 @@ public abstract class GenerateMyBatisBaseAction extends PsiElementBaseIntentionA
             }
             JavaEntity.FieldEntity fieldEntity = new JavaEntity.FieldEntity();
             fieldEntity.setType(aClass.getSimpleName());
-            fieldEntity.setName(com.beyond.generator.StringUtils.lineToHump(idCol.getColumnName()));
+            fieldEntity.setName(StringUtil.lineToHump(idCol.getColumnName()));
             fieldEntity.setComment(idCol.getColumnComment());
             javaEntity.setId(fieldEntity);
         }
@@ -204,7 +205,7 @@ public abstract class GenerateMyBatisBaseAction extends PsiElementBaseIntentionA
             }
             JavaEntity.FieldEntity fieldEntity = new JavaEntity.FieldEntity();
             fieldEntity.setType(aClass.getSimpleName());
-            fieldEntity.setName(com.beyond.generator.StringUtils.lineToHump(column.getColumnName()));
+            fieldEntity.setName(StringUtil.lineToHump(column.getColumnName()));
             fieldEntity.setComment(column.getColumnComment());
             if (withDefaultValue){
                 fieldEntity.setValueStr(column.getColumnDefault());

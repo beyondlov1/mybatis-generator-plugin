@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -115,6 +115,7 @@ public class GenerateForm extends DialogWrapper {
         south.add(importButton);
         importButton.addActionListener(e -> {
             CopyableMsgDialog msgd = CopyableMsgDialog.show(project, "");
+            if(msgd == null) return;
             ObjectMapper objectMapper = new ObjectMapper();
             try {
                 Map<String, String> data = objectMapper.readValue(msgd.getMessage(), new TypeReference<Map<String, String>>() {
