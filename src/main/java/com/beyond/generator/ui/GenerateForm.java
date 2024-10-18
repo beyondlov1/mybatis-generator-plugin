@@ -52,7 +52,7 @@ public class GenerateForm extends DialogWrapper {
                 .addItem(new PassItem("password", "password: ", getPassword(project)))
                 .addItem(new InputItem("schema", "schema: ", getProperty("schema", project)))
                 .addItem(new InputItem("tables", "tables: ", getProperty("tables", project)))
-                .addItem(new InputItem("package", "package: ", getProperty("package", project)))
+                .addItem(new InputItem("entityPackage", "package: ", getProperty("entityPackage", project)))
                 .addItem(new InputItem("mapperPackage", "mapperPackage: ", getProperty("mapperPackage", project)))
                 .addItem(new InputItem("mapperXmlPathInResource", "mapperXmlPathInResource: ", getProperty("mapperXmlPathInResource", project)))
                 .addItem(new InputItem("tableExcludePrefix", "tableExcludePrefix: ", getProperty("tableExcludePrefix", project)))
@@ -187,7 +187,7 @@ public class GenerateForm extends DialogWrapper {
         saveProperty("jdbcUrl", getData().get("jdbcUrl"), true, project);
         saveProperty("schema", getData().get("schema"), true, project);
         saveProperty("tables", getData().get("tables"), true, project);
-        saveProperty("package", getData().get("package"), true, project);
+        saveProperty("entityPackage", getData().get("entityPackage"), true, project);
         saveProperty("mapperPackage", getData().get("mapperPackage"), true, project);
         saveProperty("mapperXmlPathInResource", getData().get("mapperXmlPathInResource"), true, project);
         saveProperty("tableExcludePrefix", getData().get("tableExcludePrefix"), true, project);
