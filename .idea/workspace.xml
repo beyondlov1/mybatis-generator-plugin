@@ -5,38 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ec1100f4-4bfb-4460-b406-139238c5a1fc" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/MyBaseIntentionAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/GenerateAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/GenerateAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/StringUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/StringUtil.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/ClassReferenceCollectAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/ClassReferenceCollectAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/Comment2SwaggerAnnotationAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/Comment2SwaggerAnnotationAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/EntityGenerateAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/EntityGenerateAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMyBatisBaseAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMyBatisBaseAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMybatisFragmentAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMybatisFragmentAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMybatisFragmentFromSQLAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMybatisFragmentFromSQLAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMybatisInsertFragmentAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMybatisInsertFragmentAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMybatisResultMapAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMybatisResultMapAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMybatisUpdateFragmentAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/GenerateMybatisUpdateFragmentAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/MyBatisSql2EntityAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/MyBatisSql2EntityAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/SpringAutoFieldAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/SpringAutoFieldAction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/CopyableMsgDialog.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/CopyableMsgDialog.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/EntityForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/EntityForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/EntityNameForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/EntityNameForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/GenerateForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/GenerateForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/InputItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/InputItem.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/JdbcForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/JdbcForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/MyBatisSqlPattern.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/MyBatisSqlPattern.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/PassItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/PassItem.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/SQLForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/SQLForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/TextAreaItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/ui/TextAreaItem.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/utils/MapperUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/utils/MapperUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/utils/PropertyUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/utils/PropertyUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/MyBaseIntentionAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/beyond/generator/action/MyBaseIntentionAction.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -64,16 +35,6 @@
               <path>
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="mybatis-generator-plugin" type="f1a62948:ProjectNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="mybatis-generator-plugin" type="f1a62948:ProjectNode" />
-                <item name="Tasks" type="e4a08cd1:TasksNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="mybatis-generator-plugin" type="f1a62948:ProjectNode" />
-                <item name="Dependencies" type="6de06a37:ExternalSystemViewDefaultContributor$MyDependenciesNode" />
               </path>
               <path>
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />

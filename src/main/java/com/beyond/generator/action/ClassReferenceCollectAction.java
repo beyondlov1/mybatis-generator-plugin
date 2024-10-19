@@ -34,12 +34,7 @@ import java.util.List;
 public class ClassReferenceCollectAction extends MyBaseIntentionAction {
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                _invoke(project, editor, element);
-            }
-        });
+        _invoke(project, editor, element);
     }
 
     protected void _invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
@@ -53,7 +48,12 @@ public class ClassReferenceCollectAction extends MyBaseIntentionAction {
             String absolutePath = VfsUtil.virtualToIoFile(psiClass.getContainingFile().getVirtualFile()).getAbsolutePath();
             classAbsPaths.add(absolutePath);
         }
-        CopyableMsgDialog.show(project, String.join("\n",new HashSet<>(classAbsPaths)));
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                CopyableMsgDialog.show(project, String.join("\n",new HashSet<>(classAbsPaths)));
+            }
+        });
     }
 
     private void collectType(Project project, PsiClass psiClass, Collection<PsiClass> result){
